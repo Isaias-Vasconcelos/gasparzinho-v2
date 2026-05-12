@@ -1,0 +1,32 @@
+{
+  "name": "gasparzinho-backend",
+  "version": "1.0.0",
+  "description": "API do Gasparzinho — gerenciamento de grupos WhatsApp",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.1",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@google/generative-ai": "^0.24.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc10",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.22.3",
+    "node-cron": "^3.0.3",
+    "openai": "^6.37.0",
+    "pino": "^10.3.1",
+    "qrcode": "^1.5.4",
+    "stripe": "^22.1.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

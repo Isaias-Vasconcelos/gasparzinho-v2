@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.managerwhatsapp.app" version="1.0.0"
+  xmlns="http://www.w3.org/ns/widgets"
+  xmlns:cdv="http://cordova.apache.org/ns/1.0">
+
+  <name>Gasparzinho</name>
+  <description>Gasparzinho — gerenciador inteligente de grupos WhatsApp</description>
+  <author email="contato@gasparzinho.com" href="https://gasparzinho.com">
+    Gasparzinho
+  </author>
+
+  <content src="index.html" />
+
+  <access origin="*" />
+  <allow-intent href="http://*/*" />
+  <allow-intent href="https://*/*" />
+  <allow-intent href="tel:*" />
+  <allow-intent href="sms:*" />
+  <allow-intent href="mailto:*" />
+  <allow-intent href="geo:*" />
+
+  <preference name="DisallowOverscroll" value="true" />
+  <preference name="android-minSdkVersion" value="22" />
+  <preference name="android-targetSdkVersion" value="34" />
+  <preference name="StatusBarOverlaysWebView" value="false" />
+  <preference name="StatusBarBackgroundColor" value="#15803d" />
+  <preference name="StatusBarStyle" value="lightcontent" />
+  <preference name="Orientation" value="portrait" />
+  <preference name="Fullscreen" value="false" />
+  <preference name="AllowInlineMediaPlayback" value="true" />
+  <preference name="MediaPlaybackRequiresUserAction" value="false" />
+  <preference name="BackupWebStorage" value="local" />
+  <preference name="SplashScreenDelay" value="1500" />
+
+  <platform name="android">
+    <allow-intent href="market:*" />
+    <icon src="res/icon/android/icon-192.png" density="xxxhdpi" />
+    <splash src="res/screen/android/splash.png" />
+  </platform>
+
+  <platform name="ios">
+    <allow-intent href="itms:*" />
+    <allow-intent href="itms-apps:*" />
+  </platform>
+
+  <plugin name="cordova-plugin-whitelist" spec="^1.3.4" />
+  <plugin name="cordova-plugin-statusbar" spec="^3.0.0" />
+  <plugin name="cordova-plugin-splashscreen" spec="^6.0.0" />
+  <plugin name="cordova-plugin-network-information" spec="^3.0.0" />
+</widget>

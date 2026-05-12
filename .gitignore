@@ -1,0 +1,95 @@
+# =========================
+# NODE MODULES
+# =========================
+node_modules/
+**/node_modules/
+
+# =========================
+# ENV FILES
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# DATABASES
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# =========================
+# SESSIONS / AUTH
+# =========================
+backend/data/sessions/
+sessions/
+auth_info/
+*.session
+
+# =========================
+# LOGS
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# BUILD FILES
+# =========================
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+.cache/
+
+# =========================
+# VITE
+# =========================
+frontend/dist/
+
+# =========================
+# MOBILE / ANDROID
+# =========================
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+
+# =========================
+# IDE / EDITOR
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# =========================
+# CLAUDE / AI TOOLS
+# =========================
+.claude/
+
+# =========================
+# TEMP FILES
+# =========================
+tmp/
+temp/
+*.tmp
+
+# =========================
+# OS FILES
+# =========================
+Desktop.ini
+
+# =========================
+# PACKAGE LOCKS (opcional)
+# =========================
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
