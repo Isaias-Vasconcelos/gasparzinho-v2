@@ -1,5 +1,3 @@
-# Manager WhatsApp — Guia de Setup
-
 ## Pré-requisitos
 
 - Node.js 18+
