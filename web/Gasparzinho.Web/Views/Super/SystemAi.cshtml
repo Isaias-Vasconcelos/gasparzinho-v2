@@ -1,0 +1,103 @@
+@using Gasparzinho.Web.Services.Ai
+@model Gasparzinho.Web.Models.SystemAiViewModel
+@{
+    ViewData["Title"] = "IA do sistema";
+    Layout = "_SuperLayout";
+}
+
+<h1>IA do sistema</h1>
+<p class="page-subtitle">
+    Usada como reserva pelos clientes que não informaram um token próprio.
+    O consumo é cobrado na sua conta do provedor.
+</p>
+
+@if (Model.CreditsExhausted)
+{
+    <div class="alert alert-error">
+        <strong>Créditos esgotados.</strong> A moderação de reserva está parada.
+        Recarregue no provedor e reative abaixo.
+    </div>
+}
+@if (Model.DegradedMode)
+{
+    <div class="alert alert-warn">
+        <strong>Instabilidade detectada.</strong>
+        @(Model.DegradedReason ?? "O provedor está respondendo com erros.")
+    </div>
+}
+
+<form asp-action="SystemAi" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="card">
+        <div class="card-head"><h2>Credencial</h2></div>
+
+        <div class="field checkbox">
+            <input asp-for="Enabled" type="checkbox" />
+            <label asp-for="Enabled"></label>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="Provider"></label>
+                <select asp-for="Provider">
+                    @foreach (var provider in Model.AvailableProviders)
+                    {
+                        <option value="@provider">@AiProviders.Label(provider)</option>
+                    }
+                </select>
+                <span asp-validation-for="Provider" class="field-validation-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Model"></label>
+                <input asp-for="Model" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="ApiKey"></label>
+            <input asp-for="ApiKey" autocomplete="new-password"
+                   placeholder="@(Model.SavedKeyHint is null ? "Cole aqui o token da API" : "Token salvo: " + Model.SavedKeyHint)" />
+            <span asp-validation-for="ApiKey" class="field-validation-error"></span>
+            <div class="hint">Em branco preserva o token atual. Um token novo também limpa o bloqueio por crédito.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Prompts padrão</h2>
+            <p>Valem só para clientes que não escreveram os próprios prompts.</p>
+        </div>
+
+        <div class="field">
+            <label asp-for="ProfanityPrompt"></label>
+            <textarea asp-for="ProfanityPrompt" class="prompt"></textarea>
+        </div>
+
+        <div class="field">
+            <label asp-for="NsfwPrompt"></label>
+            <textarea asp-for="NsfwPrompt" class="prompt"></textarea>
+        </div>
+    </div>
+
+    <div class="actions" style="margin-bottom:1.25rem">
+        <button type="submit" class="btn">Salvar</button>
+    </div>
+</form>
+
+@if (Model.CreditsExhausted || Model.DegradedMode)
+{
+    <div class="card">
+        <div class="card-head"><h2>Reativar</h2></div>
+        <form asp-action="RecoverAi" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-secondary">Limpar bloqueios e reativar</button>
+        </form>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

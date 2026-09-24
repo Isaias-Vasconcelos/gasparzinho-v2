@@ -1,0 +1,131 @@
+@model Gasparzinho.Web.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Configurações";
+}
+
+<h1>Configurações</h1>
+<p class="page-subtitle">Lista de palavras bloqueadas e comandos de administrador.</p>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Palavras bloqueadas</h2>
+        <p>
+            Checadas antes da IA, sem custo. A comparação ignora maiúsculas e
+            encontra a palavra dentro de frases. @Model.Words.Count palavra(s) cadastrada(s).
+        </p>
+    </div>
+
+    <form asp-action="AddWords" method="post">
+        @Html.AntiForgeryToken()
+        <div class="field">
+            <label>Adicionar palavras</label>
+            <textarea name="words" rows="3"
+                      placeholder="Uma por linha ou separadas por vírgula"></textarea>
+            <div class="hint">Duplicatas são ignoradas automaticamente.</div>
+        </div>
+        <button type="submit" class="btn">Adicionar</button>
+    </form>
+
+    @if (Model.Words.Count > 0)
+    {
+        <div style="margin-top:1.25rem">
+            <table>
+                <thead>
+                <tr>
+                    <th>Palavra</th>
+                    <th style="width:1%"></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var word in Model.Words)
+                {
+                    <tr>
+                        <td class="mono">@word.Word</td>
+                        <td>
+                            <form asp-action="DeleteWord" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@word.Id" />
+                                <button type="submit" class="btn btn-secondary btn-sm">Remover</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <form asp-action="ClearWords" method="post" style="margin-top:1rem"
+                  onsubmit="return confirm('Remover todas as @Model.Words.Count palavras da lista?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger btn-sm">Limpar lista</button>
+            </form>
+        </div>
+    }
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Comandos de administrador</h2>
+        <p>
+            Digitados no grupo por um administrador, marcando alguém com @@ ou
+            informando o número. Ex: <span class="mono">!ban @@pessoa</span>
+        </p>
+    </div>
+
+    <form asp-action="AddCommand" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="field">
+                <label>Gatilho</label>
+                <input type="text" name="triggerWord" placeholder="!ban" required maxlength="255" />
+                <div class="hint">Uma única palavra, sem espaços.</div>
+            </div>
+            <div class="field">
+                <label>Ação</label>
+                <select name="action" required>
+                    @foreach (var (value, label) in Gasparzinho.Web.Models.SettingsViewModel.Actions)
+                    {
+                        <option value="@value">@label</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label>Descrição (opcional)</label>
+            <input type="text" name="description" placeholder="Para sua própria referência" />
+        </div>
+        <button type="submit" class="btn">Criar comando</button>
+    </form>
+
+    @if (Model.Commands.Count > 0)
+    {
+        <div style="margin-top:1.25rem">
+            <table>
+                <thead>
+                <tr>
+                    <th>Gatilho</th>
+                    <th>Ação</th>
+                    <th>Descrição</th>
+                    <th style="width:1%"></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var command in Model.Commands)
+                {
+                    <tr>
+                        <td class="mono">@command.TriggerWord</td>
+                        <td>@Gasparzinho.Web.Models.SettingsViewModel.ActionLabel(command.Action)</td>
+                        <td class="muted">@(command.Description ?? "—")</td>
+                        <td>
+                            <form asp-action="DeleteCommand" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@command.Id" />
+                                <button type="submit" class="btn btn-secondary btn-sm">Remover</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

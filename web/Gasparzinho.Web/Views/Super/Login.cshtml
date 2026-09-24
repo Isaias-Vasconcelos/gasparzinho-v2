@@ -1,0 +1,27 @@
+@model Gasparzinho.Web.Models.SuperLoginViewModel
+@{
+    ViewData["Title"] = "Administração";
+    Layout = "_AuthLayout";
+}
+
+<h1>Administração</h1>
+<p class="page-subtitle">Painel do administrador da plataforma.</p>
+
+<form asp-action="Login" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="field">
+        <label asp-for="Username"></label>
+        <input asp-for="Username" autocomplete="username" autofocus />
+        <span asp-validation-for="Username" class="field-validation-error"></span>
+    </div>
+
+    <div class="field">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" autocomplete="current-password" />
+        <span asp-validation-for="Password" class="field-validation-error"></span>
+    </div>
+
+    <button type="submit" class="btn">Entrar</button>
+</form>

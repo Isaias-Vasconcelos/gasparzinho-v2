@@ -1,0 +1,141 @@
+@model Gasparzinho.Web.Models.SuggestionListViewModel
+@{
+    ViewData["Title"] = "Sugestões";
+
+    string ActionLabel(string action) => action switch
+    {
+        "warn"   => "Advertir / banir",
+        "delete" => "Apagar mensagem",
+        "reply"  => "Responder",
+        "flag"   => "Revisar",
+        "none"   => "Nada a fazer",
+        _        => action,
+    };
+
+    string ActionPill(string action) => action switch
+    {
+        "warn"   => "pill-danger",
+        "delete" => "pill-warn",
+        "reply"  => "pill-info",
+        _        => "pill-muted",
+    };
+}
+
+<h1>Sugestões de moderação</h1>
+<p class="page-subtitle">
+    Ações que a IA propôs nos grupos configurados em modo de revisão humana.
+    Nada é aplicado no WhatsApp até você aprovar.
+</p>
+
+<div class="alert @(Model.IsUnlimited || Model.UsedToday < Model.DailyLimit ? "alert-info" : "alert-warn")">
+    Uso de hoje: <strong>@Model.UsedToday</strong> de
+    <strong>@(Model.IsUnlimited ? "ilimitadas" : Model.DailyLimit.ToString())</strong> sugestões.
+    @if (Model.DailyLimit == 0)
+    {
+        <text>O perfil atual não inclui sugestões por IA.</text>
+    }
+</div>
+
+<div class="tabs">
+    <a class="@(Model.Status == "pending" ? "active" : "")"
+       asp-action="Suggestions" asp-route-status="pending">Pendentes</a>
+    <a class="@(Model.Status == "applied" ? "active" : "")"
+       asp-action="Suggestions" asp-route-status="applied">Aplicadas</a>
+    <a class="@(Model.Status == "rejected" ? "active" : "")"
+       asp-action="Suggestions" asp-route-status="rejected">Descartadas</a>
+    <a class="@(Model.Status == "all" ? "active" : "")"
+       asp-action="Suggestions" asp-route-status="all">Todas</a>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="card">
+        <div class="empty">Nenhuma sugestão nesta lista.</div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Quando</th>
+                <th>Grupo / autor</th>
+                <th>Mensagem</th>
+                <th>Proposta da IA</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td class="muted">@item.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                    <td>
+                        <div>@(item.GroupName ?? item.GroupId)</div>
+                        <div class="muted mono">@(item.SenderPhone ?? "—")</div>
+                    </td>
+                    <td>
+                        <div class="quote">@item.MessageText</div>
+                        @if (item.DetectedReason is not null)
+                        {
+                            <div class="muted" style="margin-top:.35rem">
+                                Filtro: <strong>@item.DetectedReason</strong>
+                            </div>
+                        }
+                    </td>
+                    <td>
+                        <span class="pill @ActionPill(item.SuggestedAction)">
+                            @ActionLabel(item.SuggestedAction)
+                        </span>
+                        @if (item.Confidence is { } confidence)
+                        {
+                            <div class="muted" style="margin-top:.3rem">
+                                Confiança: @confidence.ToString("P0")
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(item.AiReason))
+                        {
+                            <div class="muted" style="margin-top:.3rem">@item.AiReason</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(item.ReplyTemplate))
+                        {
+                            <div class="quote" style="margin-top:.4rem">@item.ReplyTemplate</div>
+                        }
+                    </td>
+                    <td>
+                        @if (item.Status == "pending")
+                        {
+                            <div class="actions">
+                                <form asp-action="Approve" method="post"
+                                      onsubmit="return confirm('Aplicar esta ação no grupo agora?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-sm">Aprovar</button>
+                                </form>
+                                <form asp-action="Reject" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-secondary btn-sm">Descartar</button>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="pill @(item.Status == "applied" ? "pill-ok" : "pill-muted")">
+                                @(item.Status == "applied" ? "Aplicada" : "Descartada")
+                            </span>
+                            @if (item.ReviewedAt is { } reviewedAt)
+                            {
+                                <div class="muted" style="margin-top:.3rem">
+                                    @reviewedAt.ToLocalTime().ToString("dd/MM HH:mm")
+                                </div>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

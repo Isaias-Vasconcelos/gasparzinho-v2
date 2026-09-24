@@ -1,0 +1,194 @@
+[
+  {
+    "post": 1,
+    "objetivo": "Apresentar o ModeraHub e posicioná-lo como uma solução centralizada para gestão e moderação de grupos do WhatsApp.",
+    "titulo": "Moderação sob controle",
+    "subtitulo": "Gerencie seus grupos do WhatsApp em um só lugar.",
+    "textoImagem": "Conecte sessões, configure regras e acompanhe a moderação com mais clareza.",
+    "cta": "Conheça o ModeraHub",
+    "descricaoVisual": "Arte em formato 1080x1350, com fundo escuro em degradê discreto, detalhes tecnológicos sutis e cards arredondados. Exibir o nome MODERAHUB em destaque e uma composição com pequenos cards representando Painel, Grupos, IA e Sugestões. Usar tipografia moderna, sombras suaves e aparência SaaS premium.",
+    "screenshot": "images/painel.png",
+    "legenda": "O ModeraHub reúne os principais recursos para você conectar seus números do WhatsApp, escolher os grupos que serão moderados e acompanhar a operação em um só lugar.\n\nConfigure regras, automatize respostas, analise sugestões da IA e mantenha um histórico organizado das ações de moderação.\n\nMais clareza para administrar seus grupos e mais controle sobre cada decisão.\n\nEntre em contato e conheça o ModeraHub: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#ModeracaoDeGrupos",
+      "#WhatsApp",
+      "#GestaoDeGrupos",
+      "#InteligenciaArtificial",
+      "#SaaS"
+    ]
+  },
+  {
+    "post": 2,
+    "objetivo": "Apresentar o problema da moderação manual e mostrar como o ModeraHub ajuda a organizar a gestão dos grupos.",
+    "titulo": "Moderar tudo sozinho cansa",
+    "subtitulo": "Mensagens, regras, membros e decisões em excesso.",
+    "textoImagem": "Centralize a moderação dos seus grupos do WhatsApp.",
+    "cta": "Tenha mais controle",
+    "descricaoVisual": "Composição dividida em duas áreas: à esquerda, elementos visuais representando excesso de mensagens e tarefas; à direita, o screenshot do Painel dentro de um card grande com bordas arredondadas. Manter visual limpo, profissional e sem criar dados que não aparecem na interface.",
+    "screenshot": "images/painel.png",
+    "legenda": "Acompanhar vários grupos manualmente pode dificultar a aplicação das regras e fazer informações importantes passarem despercebidas.\n\nCom o ModeraHub, você consulta sessões ativas, grupos gerenciados, sugestões pendentes, banimentos e o status da moderação por IA em uma única visão.\n\nAssim, fica mais fácil identificar o que precisa da sua atenção e manter a operação organizada.\n\nFale com a nossa equipe: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#Moderacao",
+      "#Administradores",
+      "#GruposDeWhatsApp",
+      "#Organizacao",
+      "#Automacao"
+    ]
+  },
+  {
+    "post": 3,
+    "objetivo": "Destacar a moderação por IA como uma das principais funcionalidades do ModeraHub.",
+    "titulo": "IA para moderar melhor",
+    "subtitulo": "Respostas automáticas e análise de conteúdos em um só lugar.",
+    "textoImagem": "Textos, imagens, figurinhas e vídeos sob suas regras.",
+    "cta": "Configure sua moderação",
+    "descricaoVisual": "Usar o screenshot de IA e moderação como elemento principal, apresentado em um notebook ou card central. Ao redor, inserir etiquetas visuais discretas com os termos Texto, Imagem, Figurinha e Vídeo, sem alterar a interface original. Fundo escuro, gradiente sutil e detalhes em cor de destaque.",
+    "screenshot": "images/ia-e-moderacao.png",
+    "legenda": "O ModeraHub permite configurar respostas automáticas e moderar diferentes tipos de conteúdo nos grupos: textos, imagens, figurinhas e o primeiro quadro de vídeos.\n\nVocê pode escolher entre Claude, GPT e Gemini, definir seus tokens e modelos, personalizar prompts e ajustar os critérios de moderação.\n\nA solução se adapta às regras e à realidade da sua comunidade.\n\nComece a conversar com a equipe: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#IA",
+      "#InteligenciaArtificial",
+      "#ModeracaoPorIA",
+      "#WhatsAppBusiness",
+      "#Automacao"
+    ]
+  },
+  {
+    "post": 4,
+    "objetivo": "Mostrar o recurso de revisão humana das sugestões de moderação.",
+    "titulo": "A IA sugere. Você decide.",
+    "subtitulo": "Revise as ações antes que sejam aplicadas.",
+    "textoImagem": "Mais automação sem abrir mão do controle.",
+    "cta": "Revise com segurança",
+    "descricaoVisual": "Apresentar o screenshot de Sugestões em um card amplo, com destaque visual para a ideia de análise e aprovação. Usar elementos gráficos sutis de revisão, como indicadores de pendente, aprovado e descartado, sem inventar números ou alterar a tela. Layout elegante e espaçado.",
+    "screenshot": "images/sugestoes.png",
+    "legenda": "Nem toda comunidade precisa da mesma forma de moderação. Por isso, o ModeraHub permite trabalhar com revisão humana das sugestões feitas pela IA.\n\nVocê analisa cada sugestão e decide o que será aplicado no WhatsApp. Também pode filtrar itens pendentes, aplicados, descartados ou visualizar todos.\n\nMais praticidade para automatizar a análise sem perder a decisão final.\n\nConheça esse recurso: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#RevisaoHumana",
+      "#ModeracaoDeConteudo",
+      "#InteligenciaArtificial",
+      "#GestaoDeComunidades",
+      "#WhatsApp"
+    ]
+  },
+  {
+    "post": 5,
+    "objetivo": "Apresentar as configurações personalizadas de cada grupo e os recursos de proteção disponíveis.",
+    "titulo": "Cada grupo tem suas regras",
+    "subtitulo": "Configure filtros, punições e ações automáticas.",
+    "textoImagem": "A moderação acompanha a realidade da sua comunidade.",
+    "cta": "Personalize seu grupo",
+    "descricaoVisual": "Usar o screenshot de Configurações Grupo dentro de um monitor ou painel central. Ao redor, criar cards decorativos com palavras baseadas nos recursos reais: Filtros, Advertências, Anti-flood, Horários e Saudações. Não inserir informações numéricas ou telas que não existam.",
+    "screenshot": "images/configuracoes-grupo.png",
+    "legenda": "Com as configurações de grupo, você define como a moderação deve funcionar em cada comunidade.\n\nEscolha entre moderação automática ou revisão humana, bloqueie links e mídias, configure advertências, personalize mensagens e defina o número de infrações antes da remoção.\n\nTambém é possível programar horários para fechar e reabrir o grupo, ativar o anti-flood, enviar saudações e acompanhar as advertências registradas.\n\nFale com a equipe e veja como funciona: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#ModeracaoDeGrupos",
+      "#AntiFlood",
+      "#GestaoDeComunidades",
+      "#WhatsApp",
+      "#Automacao"
+    ]
+  },
+  {
+    "post": 6,
+    "objetivo": "Apresentar a interface centralizada e a experiência de uso do sistema.",
+    "titulo": "Tudo em uma visão",
+    "subtitulo": "Uma interface clara para acompanhar sua operação.",
+    "textoImagem": "Painel, sessões, grupos e avisos organizados.",
+    "cta": "Veja o sistema por dentro",
+    "descricaoVisual": "Criar uma composição com o screenshot do Painel em destaque e pequenos recortes fiéis dos screenshots de Sessões, Grupos e Avisos em cards sobrepostos. Usar molduras arredondadas, sombras suaves e espaçamento generoso. Não redesenhar nem modificar as interfaces.",
+    "screenshot": "images/painel.png; images/sessoes.png; images/grupos.png; images/avisos.png",
+    "legenda": "Uma boa experiência de gestão começa com informações fáceis de encontrar.\n\nNo ModeraHub, você navega por painéis organizados para acompanhar sessões, grupos, avisos, sugestões e registros de moderação.\n\nA interface ajuda você a localizar rapidamente os recursos necessários para manter seus grupos mais organizados.\n\nQuer conhecer a plataforma? Entre em contato: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#SaaS",
+      "#Interface intuitiva",
+      "#GestaoDeGrupos",
+      "#Moderacao",
+      "#Tecnologia"
+    ]
+  },
+  {
+    "post": 7,
+    "objetivo": "Demonstrar a variedade de funcionalidades disponíveis no ModeraHub.",
+    "titulo": "Uma central para sua moderação",
+    "subtitulo": "Conecte, configure, revise e acompanhe.",
+    "textoImagem": "Sessões • Grupos • IA • Sugestões • Banimentos",
+    "cta": "Centralize sua operação",
+    "descricaoVisual": "Layout em grade com cinco cards contendo os nomes Sessões, Grupos, IA, Sugestões e Banimentos. Inserir pequenos recortes dos screenshots correspondentes, sempre fiéis às imagens originais. Usar identidade visual consistente, fundo escuro, cards claros ou translúcidos e detalhes tecnológicos discretos.",
+    "screenshot": "images/sessoes.png; images/grupos.png; images/ia-e-moderacao.png; images/sugestoes.png; images/banimentos.png",
+    "legenda": "O ModeraHub concentra diferentes etapas da moderação em uma única plataforma.\n\nConecte seus números do WhatsApp por QR code, escolha os grupos que serão gerenciados, configure a IA, revise sugestões e consulte o histórico de remoções.\n\nVocê organiza a operação sem precisar procurar cada informação em lugares diferentes.\n\nConheça todos os recursos: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#ModeracaoDeGrupos",
+      "#WhatsApp",
+      "#InteligenciaArtificial",
+      "#GestaoDeComunidades",
+      "#SaaS",
+      "#Automacao"
+    ]
+  },
+  {
+    "post": 8,
+    "objetivo": "Destacar como diferencial a combinação entre IA personalizável, regras próprias e revisão humana.",
+    "titulo": "Automação do seu jeito",
+    "subtitulo": "IA, regras personalizadas e decisão humana na mesma operação.",
+    "textoImagem": "Mais flexibilidade para moderar cada comunidade.",
+    "cta": "Defina suas regras",
+    "descricaoVisual": "Criar um visual em três blocos conectados: IA, Regras e Revisão. Usar o screenshot de IA e moderação como imagem principal e pequenos elementos visuais inspirados nas telas de Configurações e Sugestões. O destaque deve ser a flexibilidade de configuração, sem usar afirmações de exclusividade.",
+    "screenshot": "images/ia-e-moderacao.png; images/configuracoes.png; images/sugestoes.png",
+    "legenda": "O ModeraHub combina recursos de IA com regras definidas por você.\n\nConfigure palavras-chave, filtros, prompts, modelos e critérios de moderação. Para bloqueios simples, as palavras configuradas podem ser verificadas antes da IA, sem custo.\n\nQuando preferir, use a revisão humana para analisar as sugestões antes da aplicação.\n\nVocê escolhe o nível de automação mais adequado para cada grupo.\n\nFale com a equipe: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#IApersonalizada",
+      "#ModeracaoInteligente",
+      "#RegrasPersonalizadas",
+      "#RevisaoHumana",
+      "#WhatsApp"
+    ]
+  },
+  {
+    "post": 9,
+    "objetivo": "Transmitir profissionalismo, organização e confiança por meio dos recursos de controle e histórico.",
+    "titulo": "Moderação com registro",
+    "subtitulo": "Acompanhe sugestões, advertências e remoções.",
+    "textoImagem": "Mais organização para decisões importantes.",
+    "cta": "Organize sua moderação",
+    "descricaoVisual": "Arte sofisticada com o screenshot de Banimentos e um recorte do screenshot de Sugestões ou Configurações Grupo. Usar fundo azul-marinho ou grafite, linhas finas, cards arredondados e hierarquia visual clara. A composição deve transmitir controle e organização, sem usar selos ou certificações não fornecidos.",
+    "screenshot": "images/banimentos.png; images/sugestoes.png; images/configuracoes-grupo.png",
+    "legenda": "Profissionalizar a moderação também significa manter os registros organizados.\n\nNo ModeraHub, você acompanha sugestões da IA, visualiza advertências registradas no grupo e consulta o histórico de pessoas removidas.\n\nEssas informações ajudam a manter mais clareza sobre as ações realizadas, sem confundir a limpeza do histórico com a readmissão de usuários.\n\nTenha uma visão mais organizada da sua moderação: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#Profissionalismo",
+      "#GestaoDeGrupos",
+      "#Moderacao",
+      "#Organizacao",
+      "#ComunidadesOnline"
+    ]
+  },
+  {
+    "post": 10,
+    "objetivo": "Converter potenciais clientes em contatos interessados em começar a utilizar o ModeraHub.",
+    "titulo": "Pronto para moderar melhor?",
+    "subtitulo": "Leve mais organização e controle para seus grupos do WhatsApp.",
+    "textoImagem": "Conecte. Configure. Modere.",
+    "cta": "Entre em contato e comece a usar",
+    "descricaoVisual": "Arte de conversão com fundo escuro premium, brilho suave em torno do nome MODERAHUB e o screenshot do Painel em um notebook ou card central. Inserir um botão visual destacado com o texto Entre em contato e comece a usar e o endereço https://w.app/hgczhe. Manter composição limpa, elegante e com alto contraste.",
+    "screenshot": "images/painel.png",
+    "legenda": "Está na hora de deixar a moderação dos seus grupos mais organizada.\n\nCom o ModeraHub, você conecta seus números do WhatsApp, seleciona os grupos, configura regras, utiliza recursos de IA e acompanha as ações de moderação em um só lugar.\n\nEntre em contato para conhecer a solução e começar a utilizar o ModeraHub.\n\nAcesse: https://w.app/hgczhe",
+    "hashtags": [
+      "#ModeraHub",
+      "#ModeracaoDeGrupos",
+      "#WhatsApp",
+      "#Automacao",
+      "#InteligenciaArtificial",
+      "#GestaoDeComunidades",
+      "#SaaS"
+    ]
+  }
+]

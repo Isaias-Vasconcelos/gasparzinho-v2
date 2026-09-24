@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Centralize a gestão, automação e moderação dos seus grupos do WhatsApp com inteligência artificial.">
+  <title>ModeraHub — Gestão inteligente para grupos do WhatsApp</title>
+
+  <style>
+    :root {
+      --bg: #07130f;
+      --bg-soft: #0b1d17;
+      --surface: rgba(255,255,255,.055);
+      --surface-strong: #10261e;
+      --border: rgba(255,255,255,.11);
+      --text: #f3faf6;
+      --muted: #a8bbb2;
+      --green: #6ee7a4;
+      --green-strong: #27c477;
+      --cyan: #75e6d2;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+      --radius: 24px;
+      --container: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 85% 0%, rgba(38, 196, 119, .16), transparent 30rem),
+        radial-gradient(circle at 0% 35%, rgba(117, 230, 210, .08), transparent 25rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(var(--container), calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 24px;
+      height: 2px;
+      border-radius: 20px;
+      background: var(--green);
+    }
+
+    h1, h2, h3 {
+      letter-spacing: -.045em;
+      line-height: 1.08;
+    }
+
+    h1 {
+      max-width: 720px;
+      font-size: clamp(2.7rem, 7vw, 5.8rem);
+      font-weight: 800;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 750;
+    }
+
+    h3 {
+      font-size: clamp(1.55rem, 2.5vw, 2.25rem);
+      font-weight: 750;
+    }
+
+    p {
+      color: var(--muted);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 0 23px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      font-size: .95rem;
+      font-weight: 750;
+      transition: .25s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      color: #062016;
+      background: var(--green);
+      box-shadow: 0 12px 30px rgba(110,231,164,.18);
+    }
+
+    .btn-primary:hover {
+      background: #9af4be;
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(110,231,164,.27);
+    }
+
+    .btn-outline {
+      border-color: var(--border);
+      color: var(--text);
+      background: rgba(255,255,255,.035);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(110,231,164,.5);
+      background: rgba(110,231,164,.08);
+    }
+
+    header {
+      position: absolute;
+      z-index: 10;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 25px 0;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3rem;
+      font-weight: 850;
+      letter-spacing: -.04em;
+    }
+
+    .logo-mark {
+      display: grid;
+      place-items: center;
+      width: 35px;
+      height: 35px;
+      border-radius: 11px;
+      color: #062016;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      font-size: 1.1rem;
+      font-weight: 900;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 29px;
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      padding: 165px 0 110px;
+      text-align: center;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: rgba(39,196,119,.12);
+      filter: blur(100px);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero h1 {
+      margin: 22px auto 23px;
+    }
+
+    .hero h1 span {
+      color: var(--green);
+    }
+
+    .hero-description {
+      max-width: 680px;
+      font-size: 1.12rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 13px;
+      margin-top: 32px;
+    }
+
+    .hero-image {
+      position: relative;
+      margin: 75px auto 0;
+      max-width: 1000px;
+      padding: 8px;
+      border: 1px solid rgba(110,231,164,.27);
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(110,231,164,.18), rgba(255,255,255,.025));
+      box-shadow: var(--shadow), 0 0 80px rgba(39,196,119,.1);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .hero-image img {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .section {
+      padding: 110px 0;
+    }
+
+    .section-heading {
+      max-width: 700px;
+      margin-bottom: 50px;
+    }
+
+    .section-heading h2 {
+      margin: 16px 0;
+    }
+
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .benefit-card {
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      transition: .3s ease;
+    }
+
+    .benefit-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(110,231,164,.35);
+      background: rgba(110,231,164,.07);
+    }
+
+    .benefit-icon {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      margin-bottom: 24px;
+      border-radius: 14px;
+      color: #072217;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+
+    .benefit-card h3 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+      letter-spacing: -.025em;
+    }
+
+    .features {
+      position: relative;
+    }
+
+    .features .section-heading {
+      margin-bottom: 72px;
+    }
+
+    .feature {
+      display: grid;
+      grid-template-columns: .86fr 1.14fr;
+      align-items: center;
+      gap: clamp(40px, 7vw, 100px);
+      margin-bottom: 125px;
+    }
+
+    .feature:nth-child(even) {
+      grid-template-columns: 1.14fr .86fr;
+    }
+
+    .feature:nth-child(even) .feature-copy {
+      order: 2;
+    }
+
+    .feature:last-child {
+      margin-bottom: 0;
+    }
+
+    .feature-number {
+      margin-bottom: 20px;
+      color: var(--green);
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+
+    .feature-copy h3 {
+      margin-bottom: 17px;
+    }
+
+    .feature-copy > p {
+      font-size: 1rem;
+    }
+
+    .feature-benefit {
+      margin: 22px 0;
+      padding: 17px 19px;
+      border-left: 2px solid var(--green);
+      border-radius: 0 12px 12px 0;
+      background: rgba(110,231,164,.07);
+      color: #d8f8e4;
+      font-size: .94rem;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 10px;
+      list-style: none;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 25px;
+      color: var(--muted);
+      font-size: .91rem;
+    }
+
+    .feature-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .feature-visual {
+      padding: 7px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255,255,255,.04);
+      box-shadow: 0 20px 55px rgba(0,0,0,.2);
+      transition: .3s ease;
+    }
+
+    .feature-visual:hover {
+      border-color: rgba(110,231,164,.4);
+      transform: translateY(-4px);
+    }
+
+    .feature-visual img {
+      width: 100%;
+      border-radius: 14px;
+    }
+
+    .highlight {
+      padding: 115px 0;
+    }
+
+    .highlight-box {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+      overflow: hidden;
+      padding: clamp(35px, 6vw, 75px);
+      border: 1px solid rgba(110,231,164,.28);
+      border-radius: 32px;
+      background:
+        radial-gradient(circle at 100% 20%, rgba(117,230,210,.18), transparent 28rem),
+        linear-gradient(135deg, #123f2d, #0b2118);
+    }
+
+    .highlight-box::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: -80px;
+      bottom: -100px;
+      border: 1px solid rgba(110,231,164,.25);
+      border-radius: 50%;
+    }
+
+    .highlight h2 {
+      margin: 17px 0;
+      max-width: 570px;
+    }
+
+    .highlight p {
+      max-width: 560px;
+      color: #c1d9cc;
+    }
+
+    .highlight-points {
+      display: grid;
+      gap: 14px;
+      list-style: none;
+    }
+
+    .highlight-points li {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      color: #d9f5e3;
+    }
+
+    .highlight-points li::before {
+      content: "✦";
+      color: var(--green);
+      font-size: 1.1rem;
+    }
+
+    .final-cta {
+      padding: 80px 0 120px;
+      text-align: center;
+    }
+
+    .final-cta-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 70px 25px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: var(--surface);
+    }
+
+    .final-cta h2 {
+      max-width: 700px;
+      margin: 15px 0;
+    }
+
+    .final-cta p {
+      max-width: 570px;
+      margin-bottom: 28px;
+    }
+
+    footer {
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .footer-content p {
+      font-size: .84rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .footer-links a:hover {
+      color: var(--green);
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 850px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 135px;
+      }
+
+      .benefits {
+        grid-template-columns: 1fr;
+      }
+
+      .feature,
+      .feature:nth-child(even) {
+        grid-template-columns: 1fr;
+        gap: 35px;
+        margin-bottom: 90px;
+      }
+
+      .feature:nth-child(even) .feature-copy {
+        order: initial;
+      }
+
+      .feature-visual {
+        order: 2;
+      }
+
+      .highlight-box {
+        grid-template-columns: 1fr;
+        gap: 35px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .container {
+        width: min(var(--container), calc(100% - 28px));
+      }
+
+      .hero {
+        padding-bottom: 70px;
+      }
+
+      .hero-description {
+        font-size: 1rem;
+      }
+
+      .hero-actions,
+      .hero-actions .btn {
+        width: 100%;
+      }
+
+      .section,
+      .highlight {
+        padding: 75px 0;
+      }
+
+      .section-heading {
+        margin-bottom: 35px;
+      }
+
+      .benefit-card {
+        padding: 24px;
+      }
+
+      .feature {
+        margin-bottom: 75px !important;
+      }
+
+      .final-cta {
+        padding: 45px 0 80px;
+      }
+
+      .final-cta-inner {
+        padding: 45px 20px;
+      }
+
+      .footer-content {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#" class="logo" aria-label="ModeraHub">
+        <span class="logo-mark">M</span>
+        ModeraHub
+      </a>
+
+      <nav class="nav-links" aria-label="Navegação principal">
+        <a href="#beneficios">Benefícios</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#contato">Contato</a>
+      </nav>
+
+      <a class="btn btn-outline" href="https://w.app/hgczhe" target="_blank" rel="noopener">
+        Começar agora
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-content">
+        <span class="eyebrow">Gestão inteligente para comunidades</span>
+        <h1>Mais controle para grupos. <span>Mais tempo para você.</span></h1>
+        <p class="hero-description">
+          Centralize suas sessões do WhatsApp, automatize a moderação com IA e mantenha suas comunidades seguras, organizadas e sob controle.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://w.app/hgczhe" target="_blank" rel="noopener">
+            Entre em contato para começar <span>→</span>
+          </a>
+          <a class="btn btn-outline" href="#funcionalidades">
+            Conheça a plataforma
+          </a>
+        </div>
+
+        <div class="hero-image">
+          <img src="images/painel.png" alt="Painel de gestão e moderação dos grupos">
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="beneficios">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="eyebrow">Tudo em um só lugar</span>
+          <h2>Uma operação mais simples, segura e eficiente.</h2>
+          <p>Tenha as ferramentas necessárias para acompanhar e moderar seus grupos sem complicar a rotina dos administradores.</p>
+        </div>
+
+        <div class="benefits">
+          <article class="benefit-card reveal">
+            <div class="benefit-icon">◎</div>
+            <h3>Visão completa da operação</h3>
+            <p>Acompanhe sessões, grupos, sugestões pendentes, banimentos e o status da moderação em um único painel.</p>
+          </article>
+
+          <article class="benefit-card reveal">
+            <div class="benefit-icon">✦</div>
+            <h3>Moderação com inteligência artificial</h3>
+            <p>Automatize respostas e identifique textos, imagens, figurinhas e vídeos com conteúdo inadequado.</p>
+          </article>
+
+          <article class="benefit-card reveal">
+            <div class="benefit-icon">✓</div>
+            <h3>Controle humano quando quiser</h3>
+            <p>Revise as ações sugeridas pela IA antes de aplicá-las e mantenha a decisão final sempre com você.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section features" id="funcionalidades">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="eyebrow">Funcionalidades</span>
+          <h2>Recursos pensados para a rotina da sua comunidade.</h2>
+          <p>Explore cada área da plataforma e configure a gestão dos seus grupos de acordo com as suas regras.</p>
+        </div>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">01 / PAINEL</div>
+            <h3>Tenha uma visão completa da gestão e moderação dos seus grupos</h3>
+            <p>O Painel centraliza os principais indicadores da sua conta, mostrando sessões e grupos gerenciados, sugestões pendentes, banimentos e o status da moderação por IA.</p>
+            <div class="feature-benefit">Acompanhe rapidamente a operação da sua comunidade e mantenha a moderação sob controle em um único lugar.</div>
+            <ul class="feature-list">
+              <li>Visualização das sessões e dos grupos gerenciados</li>
+              <li>Acompanhamento de sugestões pendentes e banimentos</li>
+              <li>Status da moderação por IA, com acesso à configuração do prompt e do token</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/painel.png" alt="Tela do Painel"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">02 / SESSÕES</div>
+            <h3>Conecte e gerencie suas sessões do WhatsApp em um só lugar</h3>
+            <p>Crie sessões nomeadas para conectar números do WhatsApp por QR code e acompanhe, em uma única tela, o número associado, a situação da conexão e os grupos vinculados.</p>
+            <div class="feature-benefit">Tenha mais controle sobre seus números conectados, organize diferentes atendimentos e gerencie rapidamente o acesso aos grupos de cada sessão.</div>
+            <ul class="feature-list">
+              <li>Criação de novas sessões com nomes personalizados</li>
+              <li>Visualização do número, responsável, status da conexão e quantidade de grupos</li>
+              <li>Acesso aos grupos, desconexão e exclusão de sessões</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/sessoes.png" alt="Tela de gerenciamento de Sessões"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">03 / GRUPOS</div>
+            <h3>Escolha quais grupos o sistema deve moderar</h3>
+            <p>Visualize todos os grupos da sua sessão do WhatsApp, confira a quantidade de membros e ative a moderação nos grupos desejados. Acompanhe quais grupos já são gerenciados e quais filtros estão ativos.</p>
+            <div class="feature-benefit">Tenha controle centralizado sobre a moderação dos seus grupos, mantendo as conversas organizadas e protegidas sem precisar configurar cada grupo separadamente.</div>
+            <ul class="feature-list">
+              <li>Ative ou interrompa a moderação em qualquer grupo disponível</li>
+              <li>Visualize o status de moderação, o total de membros e os filtros ativos</li>
+              <li>Configure os filtros e gerencie os membros dos grupos moderados</li>
+              <li>Troque de sessão e acesse rapidamente os banimentos</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/grupos.png" alt="Tela de gerenciamento de Grupos"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">04 / IA E MODERAÇÃO</div>
+            <h3>Automatize respostas e mantenha seus grupos mais seguros com IA</h3>
+            <p>Configure respostas automáticas e moderação de conteúdo para seus grupos do WhatsApp, escolhendo o provedor, o modelo, o token e os prompts que melhor atendem às suas necessidades.</p>
+            <div class="feature-benefit">Reduza o trabalho dos administradores, responda dúvidas com mais agilidade e ajude a manter as conversas livres de palavras e imagens inadequadas.</div>
+            <ul class="feature-list">
+              <li>Ative respostas automáticas por palavra-chave ou em todas as mensagens do grupo, com personalidade e limites definidos por você.</li>
+              <li>Escolha entre Claude, GPT ou Gemini e use seu próprio token de API para controlar a configuração e o consumo.</li>
+              <li>Modere mensagens de texto com filtros personalizados que identificam palavrões, ofensas e conteúdo discriminatório em diferentes idiomas.</li>
+              <li>Analise imagens, figurinhas e o primeiro quadro de vídeos para identificar nudez, violência, drogas, armas e outros conteúdos inadequados.</li>
+              <li>Teste respostas e filtros antes de colocá-los em uso e restaure os prompts padrão sempre que necessário.</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/ia-e-moderacao.png" alt="Tela de IA e moderação"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">05 / SUGESTÕES</div>
+            <h3>Revise e aprove as ações de moderação sugeridas pela IA</h3>
+            <p>Acompanhe as ações que a IA propõe para os grupos configurados no modo de revisão humana. Você mantém o controle: nada é aplicado no WhatsApp até sua aprovação.</p>
+            <div class="feature-benefit">Ganhe eficiência na moderação dos grupos sem abrir mão da supervisão e da decisão final sobre cada ação.</div>
+            <ul class="feature-list">
+              <li>Revisão humana antes de aplicar qualquer ação no WhatsApp</li>
+              <li>Filtros para visualizar sugestões pendentes, aplicadas, descartadas ou todas</li>
+              <li>Acompanhamento do uso diário de sugestões</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/sugestoes.png" alt="Tela de Sugestões"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">06 / BANIMENTOS</div>
+            <h3>Mantenha o histórico de remoções do grupo sob controle</h3>
+            <p>Consulte o histórico de pessoas removidas do grupo e mantenha esses registros organizados em um só lugar.</p>
+            <div class="feature-benefit">Tenha mais clareza sobre as remoções realizadas e mantenha o histórico do grupo limpo, sem confundir a exclusão de um registro com a readmissão da pessoa.</div>
+            <ul class="feature-list">
+              <li>Consulta ao histórico de remoções</li>
+              <li>Visualização do estado atual dos banimentos registrados</li>
+              <li>Exclusão de registros para limpar o histórico, sem readmitir a pessoa no grupo</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/banimentos.png" alt="Tela de Banimentos"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">07 / CONFIGURAÇÕES</div>
+            <h3>Automatize a moderação do seu grupo com regras personalizadas</h3>
+            <p>Cadastre palavras bloqueadas e crie comandos de administrador para aplicar ações de moderação diretamente no grupo.</p>
+            <div class="feature-benefit">Tenha mais controle sobre as conversas e agilize a gestão do grupo com regras simples, personalizadas e acionadas por administradores.</div>
+            <ul class="feature-list">
+              <li>Bloqueio de palavras antes da análise da IA, sem custo adicional, com comparação que ignora maiúsculas e identifica termos dentro de frases.</li>
+              <li>Adição de várias palavras de uma só vez, por linha ou separadas por vírgula, com duplicatas ignoradas automaticamente.</li>
+              <li>Criação de comandos personalizados para remover membros, registrar banimentos, promover ou rebaixar administradores.</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/configuracoes.png" alt="Tela de Configurações"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">08 / AVISOS</div>
+            <h3>Acompanhe seus avisos em um só lugar</h3>
+            <p>Centralize os avisos do sistema em uma lista organizada, com opções para visualizar todos os avisos ou apenas os que ainda não foram lidos.</p>
+            <div class="feature-benefit">Tenha mais controle sobre as informações importantes e identifique rapidamente o que precisa da sua atenção.</div>
+            <ul class="feature-list">
+              <li>Visualização de todos os avisos</li>
+              <li>Filtro exclusivo para avisos não lidos</li>
+              <li>Indicador da quantidade de avisos não lidos</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/avisos.png" alt="Tela de Avisos"></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-copy">
+            <div class="feature-number">09 / CONFIGURAÇÕES DE GRUPO</div>
+            <h3>Tenha controle completo sobre a segurança e a rotina do seu grupo</h3>
+            <p>Configure em um só lugar como o grupo deve ser gerenciado: defina regras de moderação, bloqueie conteúdos, personalize punições, controle horários de funcionamento e automatize ações para manter a comunidade organizada.</p>
+            <div class="feature-benefit">Reduza o trabalho dos administradores, evite conteúdos indesejados e mantenha o grupo mais seguro e organizado, com automações ajustadas às suas regras.</div>
+            <ul class="feature-list">
+              <li>Escolha entre moderação automática, com punição imediata, ou revisão humana antes de aplicar ações no WhatsApp.</li>
+              <li>Bloqueie links, palavras de baixo calão, imagens ilícitas analisadas por IA, visualizações únicas ou qualquer tipo de mídia.</li>
+              <li>Configure advertências, mensagens personalizadas e o número de infrações antes da remoção de participantes.</li>
+              <li>Defina horários e dias para fechar e reabrir o grupo automaticamente para não administradores.</li>
+              <li>Ative o anti-flood para fechar temporariamente o grupo quando o volume de mensagens ultrapassar o limite definido.</li>
+              <li>Envie saudações automáticas para novos membros usando variáveis como nome do usuário e do grupo.</li>
+              <li>Remova automaticamente participantes inativos após o período configurado, sem afetar administradores.</li>
+              <li>Feche ou reabra o grupo imediatamente, com motivo opcional e prazo para reabertura.</li>
+              <li>Acompanhe as advertências registradas no grupo.</li>
+            </ul>
+          </div>
+          <div class="feature-visual"><img src="images/configuracoes-grupo.png" alt="Tela de Configurações de Grupo"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="highlight">
+      <div class="container">
+        <div class="highlight-box reveal">
+          <div>
+            <span class="eyebrow">Seu grupo, suas regras</span>
+            <h2>Automação sem perder o controle.</h2>
+            <p>Escolha quando a IA deve agir sozinha e quando cada sugestão precisa passar pela sua aprovação. A plataforma se adapta à forma como você administra suas comunidades.</p>
+          </div>
+
+          <ul class="highlight-points">
+            <li>Moderação automática ou revisão humana antes das ações.</li>
+            <li>Regras personalizadas para textos, imagens e mídias.</li>
+            <li>Respostas automáticas configuradas com a personalidade do seu grupo.</li>
+            <li>Histórico de sugestões, advertências e banimentos organizado.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta" id="contato">
+      <div class="container">
+        <div class="final-cta-inner reveal">
+          <span class="eyebrow">Comece agora</span>
+          <h2>Leve mais organização e segurança para os seus grupos.</h2>
+          <p>Entre em contato e descubra como começar a usar uma gestão mais inteligente para suas comunidades do WhatsApp.</p>
+          <a class="btn btn-primary" href="https://w.app/hgczhe" target="_blank" rel="noopener">
+            Entre em contato para começar <span>→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-content">
+      <a href="#" class="logo">
+        <span class="logo-mark">M</span>
+        ModeraHub
+      </a>
+      <p>Gestão inteligente para comunidades do WhatsApp.</p>
+      <div class="footer-links">
+        <a href="#beneficios">Benefícios</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="https://w.app/hgczhe" target="_blank" rel="noopener">Contato</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const revealItems = document.querySelectorAll('.reveal');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealItems.forEach((item) => observer.observe(item));
+  </script>
+</body>
+</html>

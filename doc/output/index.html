@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ModeraHub: centralize, automatize e acompanhe a moderação dos seus grupos do WhatsApp com IA.">
+  <title>ModeraHub — Moderação inteligente para WhatsApp</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --surface: #ffffff;
+      --surface-soft: #f0f5ff;
+      --text: #101828;
+      --muted: #667085;
+      --primary: #635bff;
+      --primary-dark: #5148e8;
+      --secondary: #16b364;
+      --border: #e7eaf0;
+      --shadow: 0 20px 55px rgba(30, 41, 75, .10);
+      --radius: 24px;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    .container { width: min(var(--max), calc(100% - 40px)); margin: auto; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      background: #eeedff;
+      border: 1px solid #dddbff;
+      border-radius: 999px;
+      padding: 7px 13px;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .eyebrow span {
+      width: 7px;
+      height: 7px;
+      background: var(--secondary);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(22,179,100,.12);
+    }
+    h1, h2, h3 { letter-spacing: -.045em; line-height: 1.1; }
+    h1 { font-size: clamp(2.65rem, 6vw, 5.25rem); max-width: 760px; }
+    h2 { font-size: clamp(2rem, 4vw, 3.35rem); }
+    h3 { font-size: 1.45rem; }
+    .section-heading { max-width: 690px; margin-bottom: 54px; }
+    .section-heading h2 { margin: 17px 0; }
+    .section-heading p { color: var(--muted); font-size: 1.08rem; }
+
+    header {
+      position: absolute;
+      z-index: 5;
+      top: 0; left: 0; right: 0;
+      padding: 24px 0;
+    }
+    nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 850; font-size: 1.25rem; letter-spacing: -.04em; }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 11px;
+      display: grid; place-items: center; color: white;
+      background: linear-gradient(135deg, #786fff, #443bd1);
+      box-shadow: 0 8px 20px rgba(99,91,255,.3);
+    }
+    .logo-mark svg { width: 21px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; color: #596273; font-size: .94rem; font-weight: 600; }
+    .nav-links a:hover { color: var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      border: 0; cursor: pointer; border-radius: 12px; padding: 14px 21px;
+      font-weight: 750; font-size: .95rem; transition: .25s ease;
+    }
+    .btn-primary { color: white; background: var(--primary); box-shadow: 0 10px 22px rgba(99,91,255,.24); }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 14px 28px rgba(99,91,255,.3); }
+    .btn-light { color: var(--primary); background: white; border: 1px solid #e2e3ff; }
+    .btn-light:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+    .hero {
+      position: relative;
+      padding: 170px 0 105px;
+      background:
+        radial-gradient(circle at 85% 18%, rgba(125,116,255,.18), transparent 28%),
+        radial-gradient(circle at 5% 65%, rgba(53,196,145,.11), transparent 25%),
+        linear-gradient(135deg, #f8f9ff 0%, #f3f8ff 100%);
+    }
+    .hero:before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .35;
+      background-image: radial-gradient(#b9c2db 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(to bottom, black, transparent 70%);
+    }
+    .hero-grid { position: relative; display: grid; grid-template-columns: .9fr 1.1fr; gap: 60px; align-items: center; }
+    .hero-copy p { color: var(--muted); font-size: 1.18rem; max-width: 590px; margin: 25px 0 32px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 13px; }
+    .hero-note { display: flex; align-items: center; gap: 9px; color: #788295; font-size: .83rem; margin-top: 18px; }
+    .hero-note svg { color: var(--secondary); }
+    .hero-visual { position: relative; }
+    .hero-visual:after {
+      content: ""; position: absolute; z-index: -1; width: 80%; height: 60%;
+      right: -4%; bottom: -8%; background: #dfe4ff; filter: blur(30px); border-radius: 50%;
+    }
+    .screen {
+      overflow: hidden; border-radius: 16px; background: white;
+      border: 7px solid rgba(255,255,255,.85); box-shadow: 0 25px 65px rgba(53,62,111,.18);
+    }
+    .screen img { width: 100%; height: auto; }
+    .floating-card {
+      position: absolute; left: -28px; bottom: 28px; display: flex; align-items: center; gap: 12px;
+      background: white; border: 1px solid var(--border); border-radius: 15px; padding: 13px 16px;
+      box-shadow: var(--shadow); font-size: .84rem; font-weight: 750;
+      animation: float 4s ease-in-out infinite;
+    }
+    .floating-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #07864a; background: #ddf8e9; }
+    @keyframes float { 50% { transform: translateY(-8px); } }
+
+    section { padding: 110px 0; }
+    .benefits { background: white; }
+    .benefit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .benefit-card, .feature-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .benefit-card { padding: 30px; transition: .25s ease; }
+    .benefit-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+    .icon {
+      width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px;
+      color: var(--primary); background: #eeedff; margin-bottom: 23px;
+    }
+    .icon svg { width: 23px; }
+    .benefit-card h3 { margin-bottom: 10px; font-size: 1.2rem; }
+    .benefit-card p { color: var(--muted); font-size: .94rem; }
+
+    .features { background: var(--bg); }
+    .feature-list { display: flex; flex-direction: column; gap: 88px; }
+    .feature-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 72px; }
+    .feature-row:nth-child(even) .feature-visual { order: -1; }
+    .feature-copy h2 { font-size: clamp(1.85rem, 3vw, 2.7rem); margin: 16px 0; }
+    .feature-copy > p { color: var(--muted); margin-bottom: 20px; }
+    .benefit-line { color: #475467; font-weight: 650; margin-bottom: 20px; }
+    .resource-list { list-style: none; display: grid; gap: 11px; }
+    .resource-list li { display: flex; gap: 10px; color: #596273; font-size: .93rem; }
+    .resource-list li:before {
+      content: "✓"; flex: 0 0 20px; width: 20px; height: 20px; display: grid; place-items: center;
+      color: var(--primary); background: #e9e8ff; border-radius: 50%; font-weight: 800; font-size: .74rem;
+    }
+    .feature-visual { padding: 12px; border-radius: 28px; background: linear-gradient(145deg, #fff, #edf1ff); border: 1px solid #e0e5f2; box-shadow: var(--shadow); }
+    .feature-visual .screen { border-width: 4px; border-color: white; border-radius: 13px; }
+
+    .highlight { padding: 0 0 110px; background: var(--bg); }
+    .highlight-box {
+      position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 45px; align-items: center;
+      padding: 68px; border-radius: 30px; color: white;
+      background: linear-gradient(120deg, #211c68, #5147cf 60%, #786fff);
+      box-shadow: 0 25px 60px rgba(51,44,157,.25);
+    }
+    .highlight-box:after { content: ""; position: absolute; width: 330px; height: 330px; right: -100px; top: -140px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; box-shadow: 0 0 0 35px rgba(255,255,255,.04), 0 0 0 70px rgba(255,255,255,.04); }
+    .highlight .eyebrow { color: white; background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.2); }
+    .highlight h2 { margin: 17px 0; }
+    .highlight p { color: #dddfff; }
+    .highlight-points { position: relative; z-index: 1; display: grid; gap: 13px; }
+    .highlight-point { display: flex; gap: 13px; align-items: flex-start; padding: 17px; border: 1px solid rgba(255,255,255,.16); border-radius: 14px; background: rgba(255,255,255,.09); }
+    .highlight-point b { display: block; margin-bottom: 2px; }
+    .highlight-point span { color: #dddfff; font-size: .88rem; }
+    .highlight-point svg { flex: 0 0 20px; color: #8df0bd; margin-top: 3px; }
+
+    .final-cta { padding: 100px 0; text-align: center; background: white; }
+    .final-cta h2 { max-width: 700px; margin: 16px auto; }
+    .final-cta p { color: var(--muted); max-width: 590px; margin: 0 auto 28px; }
+    footer { padding: 32px 0; color: #7a8495; background: #10152b; font-size: .86rem; }
+    .footer-content { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    footer .logo { color: white; font-size: 1.08rem; }
+    footer .logo-mark { width: 30px; height: 30px; border-radius: 9px; }
+    .footer-link { color: #b5bdd0; }
+    .footer-link:hover { color: white; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .feature-row, .highlight-box { grid-template-columns: 1fr; }
+      .hero-grid { gap: 55px; }
+      .feature-row { gap: 35px; }
+      .feature-row:nth-child(even) .feature-visual { order: 0; }
+      .highlight-box { padding: 42px 32px; }
+      .benefit-grid { grid-template-columns: 1fr; }
+      .benefit-card { display: grid; grid-template-columns: auto 1fr; column-gap: 20px; }
+      .benefit-card .icon { grid-row: span 2; }
+      .benefit-card h3 { align-self: end; }
+      .benefit-card p { align-self: start; }
+    }
+    @media (max-width: 620px) {
+      .container { width: min(100% - 28px, var(--max)); }
+      header { padding: 17px 0; }
+      .nav-links { display: none; }
+      .hero { padding: 125px 0 75px; }
+      section { padding: 75px 0; }
+      .section-heading { margin-bottom: 35px; }
+      .hero-copy p { font-size: 1rem; }
+      .floating-card { left: 10px; bottom: 12px; padding: 10px 12px; font-size: .75rem; }
+      .feature-list { gap: 65px; }
+      .feature-copy h2 { font-size: 1.95rem; }
+      .highlight { padding-bottom: 75px; }
+      .highlight-box { padding: 34px 23px; }
+      .footer-content { flex-direction: column; align-items: flex-start; }
+      .benefit-card { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a href="#" class="logo" aria-label="ModeraHub">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M5 17V7l7 6 7-6v10"/><path d="M5 12l7 5 7-5"/></svg>
+          </span>
+          ModeraHub
+        </a>
+        <div class="nav-links">
+          <a href="#beneficios">Benefícios</a>
+          <a href="#funcionalidades">Funcionalidades</a>
+          <a href="#ia">IA e moderação</a>
+        </div>
+        <a class="btn btn-primary" href="https://w.app/hgczhe" target="_blank" rel="noopener">Começar agora</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow"><span></span> Moderação inteligente</span>
+          <h1>Mais controle para os seus grupos do WhatsApp.</h1>
+          <p>Centralize suas sessões, configure regras personalizadas e use IA para manter suas comunidades mais organizadas e seguras.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://w.app/hgczhe" target="_blank" rel="noopener">Entre em contato para começar <span>→</span></a>
+            <a class="btn btn-light" href="#funcionalidades">Conheça a plataforma</a>
+          </div>
+          <div class="hero-note">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>
+            Gestão centralizada e regras ajustadas à sua comunidade
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="screen"><img src="images/painel.png" alt="Painel do ModeraHub"></div>
+          <div class="floating-card">
+            <span class="floating-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <span>Visão geral da moderação</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="benefits" id="beneficios">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow"><span></span> Por que ModeraHub</span>
+          <h2>Uma operação de moderação mais clara e eficiente.</h2>
+          <p>Tenha os recursos necessários para acompanhar seus grupos, automatizar tarefas e manter o controle das ações realizadas.</p>
+        </div>
+        <div class="benefit-grid">
+          <article class="benefit-card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+            <h3>Tudo em um só lugar</h3>
+            <p>Acompanhe sessões ativas, grupos gerenciados, sugestões pendentes e banimentos pelo painel.</p>
+          </article>
+          <article class="benefit-card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <h3>Regras personalizadas</h3>
+            <p>Defina filtros, palavras bloqueadas, punições e comandos de administrador para cada grupo.</p>
+          </article>
+          <article class="benefit-card">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 7v5c0 4.7 3.4 7.9 8 9 4.6-1.1 8-4.3 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <h3>Mais segurança e controle</h3>
+            <p>Automatize a moderação ou revise as sugestões da IA antes que sejam aplicadas.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="funcionalidades">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow"><span></span> Funcionalidades</span>
+          <h2>Ferramentas para cuidar de cada detalhe.</h2>
+          <p>Conheça os recursos do ModeraHub e organize a moderação dos seus grupos com mais praticidade.</p>
+        </div>
+        <div class="feature-list">
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Painel</span>
+              <h2>Tenha uma visão geral da sua moderação em um só lugar</h2>
+              <p>Acompanhe rapidamente as principais informações da sua conta no ModeraHub, incluindo sessões ativas, grupos gerenciados, sugestões pendentes e banimentos.</p>
+              <p class="benefit-line">Monitore sua operação de moderação com mais clareza e encontre rapidamente os recursos necessários.</p>
+              <ul class="resource-list">
+                <li>Visualização do total de sessões e grupos gerenciados</li>
+                <li>Acompanhamento de sugestões pendentes e banimentos</li>
+                <li>Status da moderação por IA e acesso à configuração de prompt e token</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/painel.png" alt="Tela do Painel"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Sessões</span>
+              <h2>Conecte e gerencie seus números do WhatsApp em um só lugar</h2>
+              <p>Crie sessões identificadas por nome e conecte cada número do WhatsApp por QR code. Acompanhe o status da conexão e os grupos vinculados a cada sessão.</p>
+              <p class="benefit-line">Tenha uma visão centralizada das suas conexões e controle rapidamente o acesso aos grupos.</p>
+              <ul class="resource-list">
+                <li>Criação de novas sessões com identificação personalizada</li>
+                <li>Acompanhamento do número conectado, status e quantidade de grupos</li>
+                <li>Ações rápidas para acessar grupos, desconectar ou excluir uma sessão</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/sessoes.png" alt="Tela de Sessões"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Grupos</span>
+              <h2>Escolha quais grupos do WhatsApp devem ser moderados</h2>
+              <p>Gerencie todos os grupos vinculados à sua sessão em um único lugar. Veja a quantidade de membros, os filtros ativos e ative ou interrompa a moderação.</p>
+              <p class="benefit-line">Aplique as regras certas onde necessário e mantenha as conversas mais organizadas.</p>
+              <ul class="resource-list">
+                <li>Ative a moderação nos grupos desejados com um único clique</li>
+                <li>Visualize membros e o status de moderação de cada grupo</li>
+                <li>Consulte filtros ativos e acesse configurações e membros</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/grupos.png" alt="Tela de Grupos"></div></div>
+          </article>
+
+          <article class="feature-row" id="ia">
+            <div class="feature-copy">
+              <span class="eyebrow">IA e moderação</span>
+              <h2>Automatize respostas e mantenha seus grupos mais seguros com IA</h2>
+              <p>Configure respostas automáticas e modere textos, imagens, figurinhas e vídeos com Claude, GPT e Gemini. Personalize prompts, modelos, palavras-chave e critérios usando seus próprios tokens de API.</p>
+              <p class="benefit-line">Economize tempo e reduza conteúdos inadequados com regras ajustadas à sua comunidade.</p>
+              <ul class="resource-list">
+                <li>Respostas automáticas por palavra-chave ou para todas as mensagens</li>
+                <li>Moderação de textos, imagens, figurinhas e primeiro quadro de vídeos</li>
+                <li>Escolha de provedor, tokens, modelos, prompts e testes antes do uso</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/ia-e-moderacao.png" alt="Tela de IA e moderação"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Sugestões</span>
+              <h2>Revise e aprove ações de moderação antes que sejam aplicadas</h2>
+              <p>Acompanhe as ações propostas pela IA para grupos configurados no modo de revisão humana. Analise as sugestões e decida o que será aplicado no WhatsApp.</p>
+              <p class="benefit-line">Mantenha o controle sobre a moderação e aprove cada ação com segurança.</p>
+              <ul class="resource-list">
+                <li>Lista de sugestões pendentes para revisão humana</li>
+                <li>Filtros para sugestões pendentes, aplicadas, descartadas ou todas</li>
+                <li>Indicador do uso diário de sugestões</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/sugestoes.png" alt="Tela de Sugestões"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Banimentos</span>
+              <h2>Histórico de remoções dos grupos</h2>
+              <p>Consulte o histórico de pessoas removidas dos grupos e mantenha os registros organizados em um só lugar.</p>
+              <p class="benefit-line">Preserve um registro claro das remoções realizadas, sem confundir a limpeza do histórico com a readmissão.</p>
+              <ul class="resource-list">
+                <li>Visualização do histórico de remoções</li>
+                <li>Organização dos registros de banimentos</li>
+                <li>Limpeza do histórico sem readmitir a pessoa no grupo</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/banimentos.png" alt="Tela de Banimentos"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Configurações</span>
+              <h2>Automatize a moderação do seu grupo com regras personalizadas</h2>
+              <p>Cadastre palavras bloqueadas e crie comandos exclusivos para administradores controlarem ações no grupo de forma rápida e padronizada.</p>
+              <p class="benefit-line">Reduza o uso da IA em bloqueios simples e dê mais agilidade aos administradores.</p>
+              <ul class="resource-list">
+                <li>Palavras bloqueadas adicionadas por linha ou separadas por vírgula</li>
+                <li>Verificações antes da IA, sem custo, ignorando maiúsculas</li>
+                <li>Comandos personalizados para remover, banir, promover ou rebaixar</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/configuracoes.png" alt="Tela de Configurações"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Avisos</span>
+              <h2>Centralize e acompanhe seus avisos</h2>
+              <p>Consulte todos os avisos do ModeraHub em um único lugar e filtre a lista para visualizar apenas os itens não lidos.</p>
+              <p class="benefit-line">Identifique rapidamente as informações que ainda precisam da sua atenção.</p>
+              <ul class="resource-list">
+                <li>Visualização de todos os avisos</li>
+                <li>Filtro exclusivo para avisos não lidos</li>
+                <li>Contagem de avisos não lidos</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/avisos.png" alt="Tela de Avisos"></div></div>
+          </article>
+
+          <article class="feature-row">
+            <div class="feature-copy">
+              <span class="eyebrow">Configurações Grupo</span>
+              <h2>Tenha controle completo sobre a moderação do seu grupo</h2>
+              <p>Configure filtros de conteúdo, personalize punições e automatize ações para manter as conversas organizadas e seguras.</p>
+              <p class="benefit-line">Reduza o trabalho dos administradores com regras automáticas e proteção contra excesso de mensagens.</p>
+              <ul class="resource-list">
+                <li>Moderação automática ou revisão humana das sugestões da IA</li>
+                <li>Bloqueio de links, palavras, imagens ilícitas e tipos de mídia</li>
+                <li>Advertências, mensagens e número de infrações personalizados</li>
+                <li>Horários para fechar e reabrir o grupo, com motivo aos participantes</li>
+                <li>Anti-flood, saudações automáticas e remoção por inatividade</li>
+                <li>Acompanhamento das advertências registradas no grupo</li>
+              </ul>
+            </div>
+            <div class="feature-visual"><div class="screen"><img src="images/configuracoes-grupo.png" alt="Tela de Configurações do Grupo"></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="highlight">
+      <div class="container">
+        <div class="highlight-box">
+          <div>
+            <span class="eyebrow"><span></span> Seu grupo, suas regras</span>
+            <h2>Automação sem abrir mão do controle.</h2>
+            <p>Escolha como cada grupo será gerenciado: com punição imediata ou com revisão humana das sugestões da IA.</p>
+          </div>
+          <div class="highlight-points">
+            <div class="highlight-point">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
+              <div><b>Regras ajustadas à sua realidade</b><span>Configure filtros, punições e ações personalizadas.</span></div>
+            </div>
+            <div class="highlight-point">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
+              <div><b>Decisões mais seguras</b><span>Revise as sugestões da IA antes da aplicação no WhatsApp.</span></div>
+            </div>
+            <div class="highlight-point">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
+              <div><b>Gestão em um só lugar</b><span>Tenha grupos, sessões, avisos e históricos organizados.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="container">
+        <span class="eyebrow"><span></span> Comece agora</span>
+        <h2>Pronto para organizar a moderação dos seus grupos?</h2>
+        <p>Entre em contato e conheça o ModeraHub para tornar sua operação de moderação mais clara, segura e eficiente.</p>
+        <a class="btn btn-primary" href="https://w.app/hgczhe" target="_blank" rel="noopener">Entre em contato para começar <span>→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-content">
+      <a href="#" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M5 17V7l7 6 7-6v10"/><path d="M5 12l7 5 7-5"/></svg>
+        </span>
+        ModeraHub
+      </a>
+      <span>Moderação mais inteligente para seus grupos.</span>
+      <a class="footer-link" href="https://w.app/hgczhe" target="_blank" rel="noopener">Fale conosco</a>
+    </div>
+  </footer>
+</body>
+</html>

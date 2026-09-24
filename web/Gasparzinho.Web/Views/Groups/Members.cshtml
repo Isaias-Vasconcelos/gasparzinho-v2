@@ -1,0 +1,117 @@
+@model Gasparzinho.Web.Models.GroupMembersViewModel
+@{
+    ViewData["Title"] = "Membros";
+}
+
+<h1>Membros · @(Model.GroupName ?? "Grupo")</h1>
+<p class="page-subtitle">@Model.Members.Count membro(s). Administradores não são moderados.</p>
+
+@if (Model.InactivityEnabled)
+{
+    <div class="alert alert-info">
+        A remoção por inatividade está ativa: quem ficar
+        <strong>@Model.InactivityDays dia(s)</strong> sem enviar mensagem é removido
+        automaticamente. Os prazos vencidos aparecem destacados abaixo.
+    </div>
+}
+
+@if (Model.BridgeError is not null)
+{
+    <div class="alert alert-error">Não foi possível ler os membros: @Model.BridgeError</div>
+}
+
+<div class="actions" style="margin-bottom:1.25rem">
+    <a class="btn btn-secondary btn-sm" asp-action="Settings"
+       asp-route-sessionId="@Model.SessionId" asp-route-groupId="@Model.GroupId">
+        Configuração do grupo
+    </a>
+</div>
+
+@if (Model.Members.Count == 0 && Model.BridgeError is null)
+{
+    <div class="card">
+        <div class="empty">Nenhum membro retornado.</div>
+    </div>
+}
+else if (Model.Members.Count > 0)
+{
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Membro</th>
+                <th>Número</th>
+                <th>Última interação</th>
+                <th>Papel</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var member in Model.Members)
+            {
+                var idle = member.IdleDays;
+                var overdue = Model.InactivityEnabled && !member.IsAdmin &&
+                              idle is { } days && days >= Model.InactivityDays;
+                <tr>
+                    <td>@(string.IsNullOrWhiteSpace(member.Name) ? "—" : member.Name)</td>
+                    <td class="mono">@member.Phone</td>
+                    <td>
+                        @if (idle is null)
+                        {
+                            <span class="muted">Sem registro</span>
+                        }
+                        else if (member.LastActivity is null)
+                        {
+                            <span class="@(overdue ? "pill pill-danger" : "muted")">
+                                Nunca falou · @idle dia(s) acompanhado
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="@(overdue ? "pill pill-danger" : "")">
+                                @(idle == 0 ? "Hoje" : $"há {idle} dia(s)")
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (member.IsAdmin)
+                        {
+                            <span class="pill pill-info">Administrador</span>
+                        }
+                        else
+                        {
+                            <span class="pill pill-muted">Membro</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!member.IsAdmin)
+                        {
+                            <div class="actions">
+                                <form asp-action="RemoveMember" method="post"
+                                      onsubmit="return confirm('Remover @member.Phone do grupo?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                                    <input type="hidden" name="groupId" value="@Model.GroupId" />
+                                    <input type="hidden" name="jid" value="@member.Jid" />
+                                    <input type="hidden" name="ban" value="false" />
+                                    <button type="submit" class="btn btn-secondary btn-sm">Remover</button>
+                                </form>
+
+                                <form asp-action="RemoveMember" method="post"
+                                      onsubmit="return confirm('Remover @member.Phone e registrar nos banimentos?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                                    <input type="hidden" name="groupId" value="@Model.GroupId" />
+                                    <input type="hidden" name="jid" value="@member.Jid" />
+                                    <input type="hidden" name="ban" value="true" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Banir</button>
+                                </form>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

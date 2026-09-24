@@ -1,0 +1,59 @@
+@using Gasparzinho.Web.Services.Ai
+@model Gasparzinho.Web.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Painel";
+}
+
+<h1>@Model.TenantName</h1>
+<p class="page-subtitle">Perfil de acesso: <strong>@Model.PlanName</strong></p>
+
+<div class="grid grid-3" style="margin-bottom:1.25rem">
+    <div class="stat">
+        <div class="stat-label">Sessões</div>
+        <div class="stat-value">@Gasparzinho.Web.Models.DashboardViewModel.Usage(Model.SessionCount, Model.MaxSessions)</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Grupos gerenciados</div>
+        <div class="stat-value">@Gasparzinho.Web.Models.DashboardViewModel.Usage(Model.ManagedGroupCount, Model.MaxGroups)</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Sugestões pendentes</div>
+        <div class="stat-value">@Model.PendingSuggestions</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Banimentos</div>
+        <div class="stat-value">@Model.BanCount</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Moderação por IA</h2>
+    </div>
+
+    @if (Model.ModerationOrigin == AiCredentialOrigin.Tenant)
+    {
+        <div class="alert alert-success" style="margin-bottom:.75rem">@Model.ModerationStatus</div>
+    }
+    else if (Model.ModerationOrigin == AiCredentialOrigin.System)
+    {
+        <div class="alert alert-info" style="margin-bottom:.75rem">@Model.ModerationStatus</div>
+    }
+    else
+    {
+        <div class="alert alert-warn" style="margin-bottom:.75rem">@Model.ModerationStatus</div>
+    }
+
+    <div class="actions">
+        <a class="btn btn-secondary btn-sm" asp-controller="Moderation" asp-action="Index">
+            Configurar prompt e token
+        </a>
+        @if (Model.PendingSuggestions > 0)
+        {
+            <a class="btn btn-sm" asp-controller="Moderation" asp-action="Suggestions">
+                Revisar @Model.PendingSuggestions sugestão(ões)
+            </a>
+        }
+    </div>
+</div>
+

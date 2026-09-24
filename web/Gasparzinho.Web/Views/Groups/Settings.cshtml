@@ -1,0 +1,428 @@
+@model Gasparzinho.Web.Models.GroupSettingsViewModel
+@{
+    ViewData["Title"] = "Configurar grupo";
+    var locked = !Model.AdvancedAllowed;
+    var lockedHint = $"Disponível a partir do perfil Starter (atual: {Model.PlanName}).";
+}
+
+<h1>@(Model.GroupName ?? "Grupo")</h1>
+<p class="page-subtitle">Sessão @Model.SessionName · <span class="mono">@Model.GroupId</span></p>
+
+@if (locked)
+{
+    <div class="alert alert-warn">
+        O perfil <strong>@Model.PlanName</strong> libera links, palavras de baixo calão,
+        comandos e saudação. Os recursos marcados como bloqueados exigem um perfil maior.
+    </div>
+}
+
+<form asp-action="Settings" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="SessionId" />
+    <input type="hidden" asp-for="GroupId" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="card">
+        <div class="card-head"><h2>Geral</h2></div>
+
+        <div class="field">
+            <label asp-for="GroupName"></label>
+            <input asp-for="GroupName" />
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="IsManaged" type="checkbox" />
+            <label asp-for="IsManaged"></label>
+        </div>
+
+        <div class="field">
+            <label asp-for="ModerationMode"></label>
+            <select asp-for="ModerationMode">
+                <option value="auto">Automático — pune na hora</option>
+                <option value="suggest" disabled="@locked">
+                    Revisão humana — a IA propõe e você aprova@(locked ? " (bloqueado)" : "")
+                </option>
+            </select>
+            <div class="hint">
+                Em revisão humana, nada é aplicado no WhatsApp sem sua aprovação em Sugestões.
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Filtros</h2>
+            <p>O que faz uma mensagem ser barrada neste grupo. Administradores nunca são moderados.</p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="BanLinks" type="checkbox" />
+            <label asp-for="BanLinks"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            Apaga a mensagem e adverte quem enviou. Esgotadas as advertências
+            definidas abaixo, a pessoa é removida do grupo.
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="BanProfanity" type="checkbox" />
+            <label asp-for="BanProfanity"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            Usa a lista de palavras e, se houver token, a IA com o seu prompt.
+            <a asp-controller="Moderation" asp-action="Index">Configurar IA</a>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="BanNsfw" type="checkbox" disabled="@locked" />
+            <label asp-for="BanNsfw"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            @(locked ? lockedHint : "Analisa imagens, figurinhas e o primeiro quadro dos vídeos.")
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="BanViewOnce" type="checkbox" disabled="@locked" />
+            <label asp-for="BanViewOnce"></label>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="BanMedia" type="checkbox" disabled="@locked" />
+            <label asp-for="BanMedia"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            @(locked ? lockedHint : "Barra toda imagem, vídeo e figurinha, sem analisar o conteúdo.")
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="AiEnabled" type="checkbox" disabled="@locked" />
+            <label asp-for="AiEnabled"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 0 1.85rem">
+            @if (locked)
+            {
+                @lockedHint
+            }
+            else
+            {
+                <text>
+                    O prompt, o token e o gatilho da resposta ficam em
+                    <a asp-controller="Moderation" asp-action="Index">Moderação</a>.
+                </text>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Punição</h2>
+            <p>
+                Variáveis nas mensagens: <span class="mono">{motivo}</span>
+                <span class="mono">{grupo}</span> <span class="mono">{usuario}</span>
+                <span class="mono">{contagem}</span> <span class="mono">{max}</span>
+                <span class="mono">{restantes}</span>
+            </p>
+        </div>
+
+        <div class="field">
+            <label asp-for="WarnChances"></label>
+            <input asp-for="WarnChances" type="number" min="0" max="20" />
+            <span asp-validation-for="WarnChances" class="field-validation-error"></span>
+            <div class="hint">Zero remove na primeira infração.</div>
+        </div>
+
+        <div class="field">
+            <label asp-for="MsgWarn"></label>
+            <textarea asp-for="MsgWarn" placeholder="Em branco usa o texto padrão do sistema."></textarea>
+        </div>
+
+        <div class="field">
+            <label asp-for="MsgBan"></label>
+            <textarea asp-for="MsgBan" placeholder="Em branco usa o texto padrão do sistema."></textarea>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Bloqueio por horário</h2>
+            <p>Fecha o grupo para não administradores nos horários definidos.</p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="LockEnabled" type="checkbox" disabled="@locked" />
+            <label asp-for="LockEnabled"></label>
+        </div>
+        @if (locked)
+        {
+            <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">@lockedHint</div>
+        }
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="LockStart"></label>
+                <input asp-for="LockStart" type="time" disabled="@locked" />
+                <span asp-validation-for="LockStart" class="field-validation-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="LockEnd"></label>
+                <input asp-for="LockEnd" type="time" disabled="@locked" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Dias da semana</label>
+            <div class="actions">
+                @foreach (var (value, label) in Gasparzinho.Web.Models.GroupSettingsViewModel.WeekDays)
+                {
+                    <label class="checkbox" style="margin-right:.5rem">
+                        <input type="checkbox" name="LockDays" value="@value"
+                               checked="@Model.LockDays.Contains(value)" disabled="@locked" />
+                        <span>@label</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="LockReason"></label>
+            <input asp-for="LockReason" disabled="@locked"
+                   placeholder="Ex: expediente encerrado" />
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Anti-flood</h2>
+            <p>Fecha o grupo temporariamente quando o volume de mensagens dispara.</p>
+        </div>
+
+        <div class="field">
+            <label asp-for="FloodLimit"></label>
+            <input asp-for="FloodLimit" type="number" min="0" disabled="@locked" />
+            <span asp-validation-for="FloodLimit" class="field-validation-error"></span>
+            <div class="hint">@(locked ? lockedHint : "Zero desliga o anti-flood.")</div>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="FloodPeriodMin"></label>
+                <input asp-for="FloodPeriodMin" type="number" min="1" max="1440" disabled="@locked" />
+            </div>
+            <div class="field">
+                <label asp-for="FloodCloseMin"></label>
+                <input asp-for="FloodCloseMin" type="number" min="1" max="1440" disabled="@locked" />
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Saudação</h2>
+            <p>Enviada quando alguém entra. Use <span class="mono">{usuario}</span> e <span class="mono">{grupo}</span>.</p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="WelcomeEnabled" type="checkbox" />
+            <label asp-for="WelcomeEnabled"></label>
+        </div>
+
+        <div class="field">
+            <label asp-for="WelcomeMessage"></label>
+            <textarea asp-for="WelcomeMessage"
+                      placeholder="Ex: Bem-vindo(a) {usuario} ao {grupo}! Leia as regras antes de participar."></textarea>
+            <span asp-validation-for="WelcomeMessage" class="field-validation-error"></span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Remoção por inatividade</h2>
+            <p>
+                Remove automaticamente quem não envia mensagem no grupo há tempo demais.
+                Administradores nunca são removidos.
+            </p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="InactivityEnabled" type="checkbox" disabled="@locked" />
+            <label asp-for="InactivityEnabled"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            @(locked
+                ? lockedHint
+                : "A contagem começa quando o grupo passa a ser gerenciado — ninguém é removido sem ter tido a chance de interagir.")
+        </div>
+
+        <div class="field">
+            <label asp-for="InactivityDays"></label>
+            <input asp-for="InactivityDays" type="number" min="1" max="3650" disabled="@locked" />
+            <span asp-validation-for="InactivityDays" class="field-validation-error"></span>
+            <div class="hint">Prazo sem nenhuma mensagem até a remoção.</div>
+        </div>
+
+        <div class="field">
+            <label asp-for="InactivityReason"></label>
+            <input asp-for="InactivityReason" disabled="@locked"
+                   placeholder="Ex: limpeza de membros inativos" />
+            <span asp-validation-for="InactivityReason" class="field-validation-error"></span>
+            <div class="hint">
+                Enviado ao removido no privado e registrado nos avisos.
+                Em branco usa "inatividade — sem interagir por N dia(s)".
+            </div>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="InactivityAnnounce" type="checkbox" disabled="@locked" />
+            <label asp-for="InactivityAnnounce"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 0 1.85rem">
+            Sem isso, só o próprio removido é avisado, no privado.
+        </div>
+    </div>
+
+    <div class="actions" style="margin-bottom:1.25rem">
+        <button type="submit" class="btn">Salvar configuração</button>
+        <a class="btn btn-secondary" asp-action="Index" asp-route-sessionId="@Model.SessionId">Voltar</a>
+    </div>
+</form>
+
+@if (Model.InactivityEnabled)
+{
+    <div class="card">
+        <div class="card-head">
+            <h2>Varredura de inatividade</h2>
+            <p>
+                A verificação roda sozinha de tempos em tempos. Use o botão para rodá-la agora.
+            </p>
+        </div>
+
+        <div class="grid grid-3" style="margin-bottom:1rem">
+            <div class="stat">
+                <div class="stat-label">Membros acompanhados</div>
+                <div class="stat-value">@Model.TrackedMembers</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Passariam do prazo hoje</div>
+                <div class="stat-value">@Model.InactiveNow</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Última varredura</div>
+                <div class="stat-value" style="font-size:1.1rem">
+                    @(Model.InactivityLastRunAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
+                </div>
+            </div>
+        </div>
+
+        <div class="hint" style="margin-bottom:1rem">
+            A prévia conta todos os registros do grupo, inclusive de administradores —
+            eles aparecem aqui, mas nunca são removidos. Cada varredura remove no
+            máximo 50 pessoas, com alguns segundos entre uma e outra: remover muita
+            gente de uma vez faz o WhatsApp bloquear o número. Por isso a varredura
+            manual pode levar mais de um minuto para responder.
+        </div>
+
+        <div class="actions">
+            <form asp-action="SweepInactive" method="post"
+                  onsubmit="return confirm('Remover agora todos os participantes sem interagir há @Model.InactivityDays dia(s)?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                <input type="hidden" name="groupId" value="@Model.GroupId" />
+                <button type="submit" class="btn btn-danger">Remover inativos agora</button>
+            </form>
+
+            <a class="btn btn-secondary" asp-action="Members"
+               asp-route-sessionId="@Model.SessionId" asp-route-groupId="@Model.GroupId">
+                Ver membros e última atividade
+            </a>
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-head">
+        <h2>Controle imediato</h2>
+        <p>Fecha ou reabre o grupo agora, independente do agendamento.</p>
+    </div>
+
+    <form asp-action="Close" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="sessionId" value="@Model.SessionId" />
+        <input type="hidden" name="groupId" value="@Model.GroupId" />
+        <div class="row">
+            <div class="field">
+                <label>Motivo (opcional)</label>
+                <input type="text" name="reason" placeholder="Ex: reunião em andamento" />
+            </div>
+            <div class="field">
+                <label>Reabrir em (minutos)</label>
+                <input type="number" name="durationMinutes" min="0" value="0" />
+                <div class="hint">Zero mantém fechado até você reabrir.</div>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-secondary">Fechar grupo</button>
+        </div>
+    </form>
+
+    <form asp-action="Open" method="post" style="margin-top:.75rem">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="sessionId" value="@Model.SessionId" />
+        <input type="hidden" name="groupId" value="@Model.GroupId" />
+        <button type="submit" class="btn btn-secondary">Reabrir grupo</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Advertências</h2>
+    </div>
+
+    @if (Model.Warnings.Count == 0)
+    {
+        <div class="empty">Nenhuma advertência registrada neste grupo.</div>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Membro</th>
+                <th>Total</th>
+                <th>Último motivo</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var warning in Model.Warnings)
+            {
+                <tr>
+                    <td class="mono">@warning.Phone.Split('@')[0]</td>
+                    <td><strong>@warning.Count</strong></td>
+                    <td class="muted">@(warning.LastReason ?? "—")</td>
+                    <td>
+                        <form asp-action="ClearWarning" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                            <input type="hidden" name="groupId" value="@Model.GroupId" />
+                            <input type="hidden" name="phone" value="@warning.Phone" />
+                            <button type="submit" class="btn btn-secondary btn-sm">Zerar</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <form asp-action="ClearAllWarnings" method="post" style="margin-top:1rem"
+              onsubmit="return confirm('Zerar as advertências de todos os membros deste grupo?');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="sessionId" value="@Model.SessionId" />
+            <input type="hidden" name="groupId" value="@Model.GroupId" />
+            <button type="submit" class="btn btn-danger btn-sm">Zerar todas</button>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

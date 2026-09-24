@@ -1,0 +1,69 @@
+@model List<Gasparzinho.Web.Data.Entities.Notification>
+@{
+    ViewData["Title"] = "Avisos";
+    var unreadOnly = ViewData["UnreadOnly"] is true;
+    var unread = Model.Count(n => n.ReadAt is null);
+
+    string SeverityPill(string severity) => severity switch
+    {
+        "critical" => "pill-danger",
+        "warning"  => "pill-warn",
+        _          => "pill-info",
+    };
+}
+
+<h1>Avisos</h1>
+<p class="page-subtitle">@unread aviso(s) não lido(s) nesta lista.</p>
+
+<div class="tabs">
+    <a class="@(unreadOnly ? "" : "active")" asp-action="Index">Todos</a>
+    <a class="@(unreadOnly ? "active" : "")" asp-action="Index" asp-route-unreadOnly="true">Não lidos</a>
+</div>
+
+@if (unread > 0)
+{
+    <form asp-action="MarkAllRead" method="post" style="margin-bottom:1.25rem">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-secondary btn-sm">Marcar todos como lidos</button>
+    </form>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">Nenhum aviso.</div>
+    </div>
+}
+else
+{
+    @foreach (var notification in Model)
+    {
+        <div class="card" style="@(notification.ReadAt is null ? "" : "opacity:.6")">
+            <div class="card-head" style="margin-bottom:.5rem">
+                <span class="pill @SeverityPill(notification.Severity)">@notification.Severity</span>
+                <h3 style="margin-top:.5rem">@notification.Title</h3>
+                <p class="muted" style="font-size:.8rem">
+                    @notification.SentAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    @if (notification.ReadAt is not null)
+                    {
+                        <text> · lido</text>
+                    }
+                </p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(notification.Body))
+            {
+                <p>@notification.Body</p>
+            }
+
+            @if (notification.ReadAt is null)
+            {
+                <form asp-action="MarkRead" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@notification.Id" />
+                    <button type="submit" class="btn btn-secondary btn-sm">Marcar como lido</button>
+                </form>
+            }
+        </div>
+    }
+}

@@ -1,0 +1,84 @@
+@model Gasparzinho.Web.Models.CreateTenantViewModel
+@{
+    ViewData["Title"] = "Novo cliente";
+    Layout = "_SuperLayout";
+}
+
+<h1>Novo cliente</h1>
+<p class="page-subtitle">
+    Cria o cliente e o seu usuário administrador. Entregue o usuário e a senha
+    definidos aqui — não há cadastro público.
+</p>
+
+<form asp-action="CreateTenant" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="card">
+        <div class="card-head"><h2>Cliente</h2></div>
+
+        <div class="field">
+            <label asp-for="TenantName"></label>
+            <input asp-for="TenantName" autofocus />
+            <span asp-validation-for="TenantName" class="field-validation-error"></span>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="PlanSlug"></label>
+                <select asp-for="PlanSlug">
+                    @foreach (var plan in Model.AvailablePlans)
+                    {
+                        <option value="@plan.Slug">
+                            @plan.Name — @(plan.MaxSessions == -1 ? "sessões ilimitadas" : plan.MaxSessions + " sessão(ões)")
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="PlanSlug" class="field-validation-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="ExpiresAt"></label>
+                <input asp-for="ExpiresAt" type="date" />
+                <div class="hint">Em branco, o acesso não expira.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Acesso</h2>
+            <p>Estas são as credenciais que o cliente vai usar para entrar.</p>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="Username"></label>
+                <input asp-for="Username" autocomplete="off" />
+                <span asp-validation-for="Username" class="field-validation-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" type="text" autocomplete="new-password" />
+                <span asp-validation-for="Password" class="field-validation-error"></span>
+                <div class="hint">Exibida em texto para você poder copiar e entregar.</div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="Email"></label>
+            <input asp-for="Email" autocomplete="off" />
+            <span asp-validation-for="Email" class="field-validation-error"></span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn">Criar cliente</button>
+        <a class="btn btn-secondary" asp-action="Index">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

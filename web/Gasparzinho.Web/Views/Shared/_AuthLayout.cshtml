@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Gasparzinho</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        @if (TempData["Success"] is string success)
+        {
+            <div class="alert alert-success">@success</div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="alert alert-error">@error</div>
+        }
+        @RenderBody()
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

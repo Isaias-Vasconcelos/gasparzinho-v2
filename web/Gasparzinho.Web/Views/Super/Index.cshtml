@@ -1,0 +1,122 @@
+@model Gasparzinho.Web.Models.SuperDashboardViewModel
+@{
+    ViewData["Title"] = "Clientes";
+    Layout = "_SuperLayout";
+}
+
+<h1>Clientes</h1>
+<p class="page-subtitle">@Model.Tenants.Count cliente(s) · @Model.TotalUsers usuário(s) · @Model.TotalSessions sessão(ões)</p>
+
+@if (Model.SystemAiCreditsExhausted)
+{
+    <div class="alert alert-error">
+        A IA do sistema está com os créditos esgotados. Clientes sem token próprio
+        estão sem moderação por IA.
+        <a asp-action="SystemAi">Revisar configuração</a>.
+    </div>
+}
+else if (!Model.SystemAiEnabled)
+{
+    <div class="alert alert-warn">
+        A IA do sistema está desligada. Só os clientes com token próprio têm moderação por IA.
+        <a asp-action="SystemAi">Configurar</a>.
+    </div>
+}
+
+<div class="actions" style="margin-bottom:1.25rem">
+    <a class="btn" asp-action="CreateTenant">Novo cliente</a>
+</div>
+
+@if (Model.Tenants.Count == 0)
+{
+    <div class="card">
+        <div class="empty">Nenhum cliente cadastrado ainda.</div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Acesso</th>
+                <th>Perfil</th>
+                <th>Uso</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.Tenants)
+            {
+                <tr>
+                    <td>
+                        <div><strong>@row.Tenant.Name</strong></div>
+                        <div class="muted" style="font-size:.8rem">
+                            criado em @row.Tenant.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                        </div>
+                    </td>
+                    <td>
+                        <div class="mono">@(row.OwnerUsername ?? "—")</div>
+                        @if (row.IsExpired)
+                        {
+                            <span class="pill pill-danger">Expirado</span>
+                        }
+                        else if (row.Tenant.PlanExpiresAt is { } expires)
+                        {
+                            <span class="pill pill-warn">até @expires.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="pill pill-ok">Sem prazo</span>
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="UpdateTenantPlan" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@row.Tenant.Id" />
+                            <select name="planSlug" style="margin-bottom:.4rem">
+                                @foreach (var plan in Model.Plans)
+                                {
+                                    <option value="@plan.Slug" selected="@(plan.Slug == row.Tenant.PlanId)">
+                                        @plan.Name
+                                    </option>
+                                }
+                            </select>
+                            <input type="date" name="expiresAt"
+                                   value="@(row.Tenant.PlanExpiresAt?.ToString("yyyy-MM-dd"))"
+                                   style="margin-bottom:.4rem" />
+                            <button type="submit" class="btn btn-secondary btn-sm">Salvar</button>
+                        </form>
+                    </td>
+                    <td class="muted">
+                        <div>@row.SessionCount sessão(ões)</div>
+                        <div>@row.ManagedGroupCount grupo(s)</div>
+                        <div>@row.UserCount usuário(s)</div>
+                    </td>
+                    <td>
+                        @if (row.OwnerUserId is not null)
+                        {
+                            <form asp-action="ResetPassword" method="post" style="margin-bottom:.5rem"
+                                  onsubmit="return confirm('Definir uma nova senha para @row.OwnerUsername?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@row.OwnerUserId" />
+                                <input type="text" name="newPassword" placeholder="Nova senha"
+                                       minlength="8" required style="margin-bottom:.4rem" />
+                                <button type="submit" class="btn btn-secondary btn-sm">Redefinir senha</button>
+                            </form>
+                        }
+
+                        <form asp-action="DeleteTenant" method="post"
+                              onsubmit="return confirm('Remover @row.Tenant.Name e TODOS os seus dados? Esta ação não pode ser desfeita.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@row.Tenant.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

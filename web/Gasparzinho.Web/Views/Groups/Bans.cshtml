@@ -1,0 +1,51 @@
+@model Gasparzinho.Web.Models.BanListViewModel
+@{
+    ViewData["Title"] = "Banimentos";
+}
+
+<h1>Banimentos</h1>
+<p class="page-subtitle">
+    Histórico de remoções. Apagar o registro não readmite a pessoa no grupo —
+    serve apenas para limpar o histórico.
+</p>
+
+@if (Model.Bans.Count == 0)
+{
+    <div class="card">
+        <div class="empty">Nenhum banimento registrado.</div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Quando</th>
+                <th>Número</th>
+                <th>Grupo</th>
+                <th>Motivo</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var ban in Model.Bans)
+            {
+                <tr>
+                    <td class="muted">@ban.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="mono">@ban.Phone</td>
+                    <td>@(ban.GroupName ?? "—")</td>
+                    <td class="muted">@(ban.Reason ?? "—")</td>
+                    <td>
+                        <form asp-action="DeleteBan" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ban.Id" />
+                            <button type="submit" class="btn btn-secondary btn-sm">Apagar</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

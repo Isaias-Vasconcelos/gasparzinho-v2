@@ -1,0 +1,167 @@
+@model Gasparzinho.Web.Models.GroupListViewModel
+@{
+    ViewData["Title"] = "Grupos";
+}
+
+<h1>Grupos · @Model.SessionName</h1>
+<p class="page-subtitle">
+    Escolha quais grupos o sistema deve moderar.
+    Gerenciados: <strong>@Gasparzinho.Web.Models.DashboardViewModel.Usage(Model.ManagedCount, Model.MaxGroups)</strong>
+    no total
+    @if (Model.MaxGroupsPerSession != -1)
+    {
+        <text>· <strong>@Model.ManagedInSession / @Model.MaxGroupsPerSession</strong> nesta sessão</text>
+    }
+</p>
+
+@if (Model.BridgeError is not null)
+{
+    <div class="alert alert-error">
+        Não foi possível ler os grupos do WhatsApp: @Model.BridgeError
+        <br />Abaixo estão apenas os grupos já gerenciados.
+    </div>
+}
+
+<div class="actions" style="margin-bottom:1.25rem">
+    <a class="btn btn-secondary btn-sm" asp-controller="Sessions" asp-action="Index">Trocar de sessão</a>
+    <a class="btn btn-secondary btn-sm" asp-action="Bans">Ver banimentos</a>
+</div>
+
+@if (Model.Groups.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            Nenhum grupo encontrado nesta sessão. O número precisa participar de
+            algum grupo — de preferência como administrador.
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-tools">
+            <input type="search" id="group-filter" autocomplete="off"
+                   placeholder="Buscar grupo pelo nome…" aria-label="Buscar grupo pelo nome" />
+            <span class="muted" id="group-count"></span>
+        </div>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+            <tr>
+                <th>Grupo</th>
+                <th>Membros</th>
+                <th>Filtros ativos</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr id="group-nomatch" hidden>
+                <td colspan="4" class="empty">Nenhum grupo corresponde à busca.</td>
+            </tr>
+            @foreach (var group in Model.Groups)
+            {
+                <tr data-group="@group.Name">
+                    <td>
+                        <div><strong>@group.Name</strong></div>
+                        @if (group.IsManaged)
+                        {
+                            <span class="pill pill-ok">Gerenciado</span>
+                            @if (group.ModerationMode == "suggest")
+                            {
+                                <span class="pill pill-info">Revisão humana</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="pill pill-muted">Fora da moderação</span>
+                        }
+                    </td>
+                    <td class="muted">@(group.Participants > 0 ? group.Participants.ToString() : "—")</td>
+                    <td class="muted">
+                        @(group.ActiveFilters.Count > 0 ? string.Join(", ", group.ActiveFilters) : "—")
+                    </td>
+                    <td>
+                        <div class="actions">
+                            @if (group.IsManaged)
+                            {
+                                <a class="btn btn-sm" asp-action="Settings"
+                                   asp-route-sessionId="@Model.SessionId"
+                                   asp-route-groupId="@group.GroupId">Configurar</a>
+
+                                <a class="btn btn-secondary btn-sm" asp-action="Members"
+                                   asp-route-sessionId="@Model.SessionId"
+                                   asp-route-groupId="@group.GroupId">Membros</a>
+
+                                <form asp-action="Unmanage" method="post"
+                                      onsubmit="return confirm('Parar de moderar @group.Name? A configuração fica salva.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                                    <input type="hidden" name="groupId" value="@group.GroupId" />
+                                    <button type="submit" class="btn btn-secondary btn-sm">Parar</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Manage" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                                    <input type="hidden" name="groupId" value="@group.GroupId" />
+                                    <input type="hidden" name="groupName" value="@group.Name" />
+                                    <button type="submit" class="btn btn-sm">Moderar</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            var input = document.getElementById('group-filter');
+            if (!input) return; // lista vazia: não há o que filtrar
+
+            var counter = document.getElementById('group-count');
+            var noMatch = document.getElementById('group-nomatch');
+
+            // Busca sem diferenciar acentos nem maiúsculas: nome de grupo
+            // costuma ter acento e emoji, e ninguém digita assim na busca.
+            function normalize(text) {
+                return text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+            }
+
+            var index = Array.prototype.map.call(
+                document.querySelectorAll('tr[data-group]'),
+                function (row) {
+                    return { row: row, name: normalize(row.getAttribute('data-group') || '') };
+                });
+
+            function apply() {
+                var term = normalize(input.value.trim());
+                var shown = 0;
+
+                index.forEach(function (item) {
+                    var match = !term || item.name.indexOf(term) !== -1;
+                    item.row.hidden = !match;
+                    if (match) shown++;
+                });
+
+                noMatch.hidden = shown > 0;
+                counter.textContent = term
+                    ? shown + ' de ' + index.length + ' grupos'
+                    : index.length + (index.length === 1 ? ' grupo' : ' grupos');
+            }
+
+            input.addEventListener('input', apply);
+            apply();
+        })();
+    </script>
+}

@@ -1,0 +1,343 @@
+@using Gasparzinho.Web.Services.Ai
+@model Gasparzinho.Web.Models.ModerationConfigViewModel
+@{
+    ViewData["Title"] = "IA e moderação";
+    var suggestions = ModerationConfigViewModel.ModelSuggestions;
+    var assistantReady = Model.AssistantEnabled && Model.SavedAssistantKeyHint is not null;
+}
+
+<h1>Inteligência artificial</h1>
+<p class="page-subtitle">
+    Resposta automática no grupo e moderação de conteúdo. Cada uma tem o seu provedor,
+    token e prompt — ajuste os textos como preferir.
+</p>
+
+@* Estado da resposta automática. *@
+@if (assistantReady)
+{
+    <div class="alert alert-success">
+        <strong>Resposta automática ativa.</strong>
+        Provedor <strong>@AiProviders.Label(Model.AssistantProvider)</strong>,
+        modelo <span class="mono">@Model.AssistantModel</span>.
+        Ela só responde nos grupos com "Resposta automática com IA" marcada.
+    </div>
+}
+else
+{
+    <div class="alert alert-warn">
+        <strong>Resposta automática desligada.</strong>
+        Nenhuma mensagem do grupo é respondida pela IA.
+    </div>
+}
+
+@* Estado da moderação: de onde vem a IA que está em uso agora. *@
+@if (Model.ActiveOrigin == AiCredentialOrigin.Tenant)
+{
+    <div class="alert alert-success">
+        <strong>Moderação ativa com o seu token.</strong>
+        Provedor <strong>@AiProviders.Label(Model.ActiveProvider)</strong>,
+        modelo <span class="mono">@Model.ActiveModel</span>.
+        O consumo é cobrado na sua conta do provedor.
+    </div>
+}
+else if (Model.ActiveOrigin == AiCredentialOrigin.System)
+{
+    <div class="alert alert-info">
+        <strong>Moderação usando a IA do sistema.</strong>
+        Provedor <strong>@AiProviders.Label(Model.ActiveProvider)</strong>,
+        modelo <span class="mono">@Model.ActiveModel</span>.
+        Informe o seu próprio token abaixo para usar a sua conta e os seus limites.
+    </div>
+}
+else
+{
+    <div class="alert alert-warn">
+        <strong>Nenhuma IA de moderação disponível.</strong>
+        Só a lista de palavras está funcionando — imagens ilícitas não são analisadas.
+        @if (!Model.SystemFallbackAvailable)
+        {
+            <text>A IA do sistema está desligada, então é preciso informar um token próprio.</text>
+        }
+    </div>
+}
+
+<form asp-action="Index" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Resposta automática no grupo</h2>
+            <p>
+                A IA responde as mensagens do grupo seguindo o prompt abaixo. Vale por grupo:
+                ative "Resposta automática com IA" na configuração de cada grupo.
+            </p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="AssistantEnabled" type="checkbox" />
+            <label asp-for="AssistantEnabled"></label>
+        </div>
+        <div class="hint" style="margin:-.7rem 0 1.1rem 1.85rem">
+            Sem token próprio a resposta não funciona — aqui não há IA do sistema como reserva.
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="AssistantProvider"></label>
+                <select asp-for="AssistantProvider" id="assistant-provider">
+                    @foreach (var provider in Model.AvailableProviders)
+                    {
+                        <option value="@provider">@AiProviders.Label(provider)</option>
+                    }
+                </select>
+                <span asp-validation-for="AssistantProvider" class="field-validation-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="AssistantModel"></label>
+                <input asp-for="AssistantModel" id="assistant-model" list="assistant-model-options"
+                       placeholder="@AiProviders.DefaultModel(Model.AssistantProvider)" />
+                <datalist id="assistant-model-options"></datalist>
+                <div class="hint">Em branco usa o modelo padrão do provedor.</div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="AssistantApiKey"></label>
+            <input asp-for="AssistantApiKey" autocomplete="new-password"
+                   placeholder="@(Model.SavedAssistantKeyHint is null ? "Cole aqui o token da API" : "Token salvo: " + Model.SavedAssistantKeyHint)" />
+            <span asp-validation-for="AssistantApiKey" class="field-validation-error"></span>
+            <div class="hint">
+                @if (Model.SavedAssistantKeyHint is not null)
+                {
+                    <text>Token salvo: <span class="mono">@Model.SavedAssistantKeyHint</span>. Preencha somente para substituí-lo.</text>
+                }
+                else
+                {
+                    <text>Pode ser o mesmo token da moderação ou outro, à sua escolha.</text>
+                }
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="TriggerMode"></label>
+                <select asp-for="TriggerMode" id="trigger-mode">
+                    @foreach (var (value, label) in Gasparzinho.Web.Models.ModerationConfigViewModel.TriggerModes)
+                    {
+                        <option value="@value">@label</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label asp-for="TriggerKeyword"></label>
+                <input asp-for="TriggerKeyword" id="trigger-keyword" placeholder="!ia" />
+                <span asp-validation-for="TriggerKeyword" class="field-validation-error"></span>
+                <div class="hint">Só usada no modo por palavra-chave.</div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="AssistantPrompt"></label>
+            <textarea asp-for="AssistantPrompt" class="prompt"></textarea>
+            <span asp-validation-for="AssistantPrompt" class="field-validation-error"></span>
+            <div class="hint">
+                Define a personalidade e os limites do assistente. Aceita
+                <span class="mono">{grupo}</span> e <span class="mono">{usuario}</span>,
+                substituídos pelo nome do grupo e de quem escreveu.
+                Peça respostas curtas: mensagens longas ficam ruins no WhatsApp.
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Credencial da moderação</h2>
+            <p>
+                Enquanto o campo de token ficar vazio, o token já salvo é preservado.
+                Ao desativar, a moderação volta a usar a IA do sistema (se houver).
+            </p>
+        </div>
+
+        <div class="field checkbox">
+            <input asp-for="ModerationEnabled" type="checkbox" />
+            <label asp-for="ModerationEnabled"></label>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="ModerationProvider"></label>
+                <select asp-for="ModerationProvider" id="provider">
+                    @foreach (var provider in Model.AvailableProviders)
+                    {
+                        <option value="@provider">@AiProviders.Label(provider)</option>
+                    }
+                </select>
+                <span asp-validation-for="ModerationProvider" class="field-validation-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="ModerationModel"></label>
+                <input asp-for="ModerationModel" id="model" list="model-options"
+                       placeholder="@AiProviders.DefaultModel(Model.ModerationProvider)" />
+                <datalist id="model-options"></datalist>
+                <div class="hint">Em branco usa o modelo padrão do provedor.</div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="ModerationApiKey"></label>
+            <input asp-for="ModerationApiKey" autocomplete="new-password"
+                   placeholder="@(Model.SavedKeyHint is null ? "Cole aqui o token da API" : "Token salvo: " + Model.SavedKeyHint)" />
+            <span asp-validation-for="ModerationApiKey" class="field-validation-error"></span>
+            <div class="hint">
+                @if (Model.SavedKeyHint is not null)
+                {
+                    <text>Token salvo: <span class="mono">@Model.SavedKeyHint</span>. Preencha somente para substituí-lo.</text>
+                }
+                else
+                {
+                    <text>O token fica guardado no servidor e nunca é exibido de volta por inteiro.</text>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Prompt do filtro de palavras</h2>
+            <p>
+                Instrução enviada à IA a cada mensagem de texto. A resposta esperada é
+                apenas <span class="mono">SIM</span> ou <span class="mono">NÃO</span> —
+                mantenha essa exigência ao reescrever.
+            </p>
+        </div>
+        <div class="field">
+            <textarea asp-for="ProfanityPrompt" class="prompt"></textarea>
+            <span asp-validation-for="ProfanityPrompt" class="field-validation-error"></span>
+            <div class="hint">
+                A lista de palavras em Configurações é checada antes e não gasta IA.
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Prompt do filtro de imagens</h2>
+            <p>
+                Instrução usada na análise de imagens, figurinhas e do primeiro quadro
+                dos vídeos. Também deve responder apenas
+                <span class="mono">SIM</span> ou <span class="mono">NÃO</span>.
+            </p>
+        </div>
+        <div class="field">
+            <textarea asp-for="NsfwPrompt" class="prompt"></textarea>
+            <span asp-validation-for="NsfwPrompt" class="field-validation-error"></span>
+            <div class="hint">
+                Vale por grupo: ative "Bloquear imagens ilícitas" na configuração de cada grupo.
+            </div>
+        </div>
+    </div>
+
+    <div class="actions" style="margin-bottom:1.25rem">
+        <button type="submit" class="btn">Salvar configuração</button>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Testar a resposta automática</h2>
+        <p>Faz uma pergunta ao assistente com o token e o prompt salvos, sem passar pelo WhatsApp.</p>
+    </div>
+    <form asp-action="TestAssistant" method="post">
+        @Html.AntiForgeryToken()
+        <div class="field">
+            <input type="text" name="message" placeholder="Ex: qual é o horário do grupo?" />
+        </div>
+        <button type="submit" class="btn btn-secondary">Enviar pergunta</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Testar o filtro de palavras</h2>
+        <p>Escreva uma mensagem e veja se ela seria bloqueada com o token e o prompt salvos.</p>
+    </div>
+    <form asp-action="Test" method="post">
+        @Html.AntiForgeryToken()
+        <div class="field">
+            <input type="text" name="message" placeholder="Ex: seu texto de teste aqui" />
+        </div>
+        <button type="submit" class="btn btn-secondary">Testar filtro de palavras</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Manutenção</h2>
+    </div>
+    <div class="actions">
+        <form asp-action="ResetPrompts" method="post"
+              onsubmit="return confirm('Restaurar os três prompts (resposta, palavras e imagens) para o texto padrão?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-secondary">Restaurar prompts padrão</button>
+        </form>
+
+        @if (Model.SavedAssistantKeyHint is not null)
+        {
+            <form asp-action="RemoveAssistantKey" method="post"
+                  onsubmit="return confirm('Remover o token da resposta automática? Ela será desativada.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">Remover token da resposta</button>
+            </form>
+        }
+
+        @if (Model.SavedKeyHint is not null)
+        {
+            <form asp-action="RemoveKey" method="post"
+                  onsubmit="return confirm('Remover o token da moderação? Ela passará a usar a IA do sistema.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">Remover token da moderação</button>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Sugere os modelos do provedor escolhido, sem impedir um valor digitado.
+        const modelsByProvider = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(suggestions));
+
+        function bindModels(providerId, modelId, datalistId) {
+            const providerSelect = document.getElementById(providerId);
+            const modelInput = document.getElementById(modelId);
+            const datalist = document.getElementById(datalistId);
+
+            function refresh() {
+                const options = modelsByProvider[providerSelect.value] || [];
+                datalist.innerHTML = options.map(m => `<option value="${m}"></option>`).join('');
+                modelInput.placeholder = options[0] || '';
+            }
+
+            providerSelect.addEventListener('change', refresh);
+            refresh();
+        }
+
+        bindModels('assistant-provider', 'assistant-model', 'assistant-model-options');
+        bindModels('provider', 'model', 'model-options');
+
+        // A palavra-chave só faz sentido no modo por palavra-chave.
+        const triggerMode = document.getElementById('trigger-mode');
+        const triggerKeyword = document.getElementById('trigger-keyword');
+
+        function refreshTrigger() {
+            triggerKeyword.disabled = triggerMode.value !== 'keyword';
+        }
+
+        triggerMode.addEventListener('change', refreshTrigger);
+        refreshTrigger();
+    </script>
+}

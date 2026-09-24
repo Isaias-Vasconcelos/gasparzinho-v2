@@ -1,0 +1,115 @@
+[
+  {
+    "nome": "Painel",
+    "titulo": "Tenha uma visão geral da sua moderação em um só lugar",
+    "descricao": "Acompanhe rapidamente as principais informações da sua conta no ModeraHub, incluindo sessões ativas, grupos gerenciados, sugestões pendentes e banimentos. Consulte também o status da moderação por IA e acesse a configuração do prompt e do token.",
+    "beneficio": "Monitore sua operação de moderação com mais clareza e encontre rapidamente os recursos necessários para manter seus grupos organizados.",
+    "recursos": [
+      "Visualização do total de sessões e grupos gerenciados",
+      "Acompanhamento de sugestões pendentes e banimentos",
+      "Status da moderação por IA e acesso à configuração de prompt e token"
+    ],
+    "imagem": "images/painel.png"
+  },
+  {
+    "nome": "Sessões",
+    "titulo": "Conecte e gerencie seus números do WhatsApp em um só lugar",
+    "descricao": "Crie sessões identificadas por nome e conecte cada número do WhatsApp por QR code. Acompanhe o status da conexão e os grupos vinculados a cada sessão.",
+    "beneficio": "Tenha uma visão centralizada das suas conexões do WhatsApp, organizando diferentes números e controlando rapidamente o acesso aos grupos.",
+    "recursos": [
+      "Criação de novas sessões com identificação personalizada",
+      "Acompanhamento do número conectado, status e quantidade de grupos",
+      "Ações rápidas para acessar grupos, desconectar ou excluir uma sessão"
+    ],
+    "imagem": "images/sessoes.png"
+  },
+  {
+    "nome": "Grupos",
+    "titulo": "Escolha quais grupos do WhatsApp devem ser moderados",
+    "descricao": "Gerencie todos os grupos vinculados à sua sessão do WhatsApp em um único lugar. Veja a quantidade de membros, confira os filtros ativos e ative ou interrompa a moderação de cada grupo.",
+    "beneficio": "Tenha controle centralizado sobre a moderação dos seus grupos, aplicando as regras certas onde necessário e mantendo as conversas mais organizadas.",
+    "recursos": [
+      "Ative a moderação nos grupos desejados com um único clique",
+      "Visualize a quantidade de membros e o status de moderação de cada grupo",
+      "Consulte os filtros ativos e acesse as configurações e os membros dos grupos gerenciados"
+    ],
+    "imagem": "images/grupos.png"
+  },
+  {
+    "nome": "IA e moderação",
+    "titulo": "Automatize respostas e mantenha seus grupos mais seguros com IA",
+    "descricao": "Configure respostas automáticas para as mensagens dos grupos e modere textos, imagens, figurinhas e vídeos com provedores de IA como Claude, GPT e Gemini. Personalize os prompts, modelos, palavras-chave e critérios de moderação usando seus próprios tokens de API.",
+    "beneficio": "Economize tempo na gestão dos grupos, ofereça respostas rápidas aos participantes e reduza conteúdos inadequados com regras ajustadas à realidade da sua comunidade.",
+    "recursos": [
+      "Respostas automáticas por IA ativadas por palavra-chave ou para todas as mensagens, com personalidade e limites definidos por você.",
+      "Moderação de textos, imagens, figurinhas e primeiro quadro de vídeos, com filtros personalizados para identificar conteúdo ofensivo, ilícito ou inadequado.",
+      "Escolha entre Claude, GPT e Gemini, configure seus tokens e modelos, salve prompts personalizados e teste as respostas e filtros antes de usar nos grupos."
+    ],
+    "imagem": "images/ia-e-moderacao.png"
+  },
+  {
+    "nome": "Sugestões",
+    "titulo": "Revise e aprove ações de moderação antes que sejam aplicadas",
+    "descricao": "Acompanhe as ações de moderação propostas pela IA para os grupos configurados no modo de revisão humana. Analise as sugestões e decida o que será aplicado no WhatsApp.",
+    "beneficio": "Você mantém o controle sobre a moderação dos grupos, evitando que qualquer ação seja aplicada automaticamente sem sua aprovação.",
+    "recursos": [
+      "Lista de sugestões pendentes para revisão humana",
+      "Filtros para visualizar sugestões pendentes, aplicadas, descartadas ou todas",
+      "Indicador do uso diário de sugestões"
+    ],
+    "imagem": "images/sugestoes.png"
+  },
+  {
+    "nome": "Banimentos",
+    "titulo": "Histórico de remoções dos grupos",
+    "descricao": "Consulte o histórico de pessoas removidas dos grupos e mantenha os registros organizados em um só lugar.",
+    "beneficio": "Tenha mais controle sobre a moderação e preserve um registro claro das remoções realizadas, sem confundir a limpeza do histórico com a readmissão de usuários.",
+    "recursos": [
+      "Visualização do histórico de remoções",
+      "Organização dos registros de banimentos",
+      "Limpeza do histórico sem readmitir a pessoa no grupo"
+    ],
+    "imagem": "images/banimentos.png"
+  },
+  {
+    "nome": "Configurações",
+    "titulo": "Automatize a moderação do seu grupo com regras personalizadas",
+    "descricao": "Cadastre palavras bloqueadas e crie comandos exclusivos para administradores controlarem ações no grupo de forma rápida e padronizada.",
+    "beneficio": "Reduza o uso da IA em bloqueios simples, economize recursos e dê mais agilidade aos administradores para moderar participantes.",
+    "recursos": [
+      "Adicione palavras bloqueadas uma por linha ou separadas por vírgula, com duplicatas ignoradas automaticamente.",
+      "Faça verificações antes da IA, sem custo, ignorando maiúsculas e identificando palavras dentro de frases.",
+      "Crie comandos de administrador personalizados para remover participantes, registrar banimentos, promover ou rebaixar administradores."
+    ],
+    "imagem": "images/configuracoes.png"
+  },
+  {
+    "nome": "Avisos",
+    "titulo": "Centralize e acompanhe seus avisos",
+    "descricao": "Consulte todos os avisos do ModeraHub em um único lugar e filtre a lista para visualizar apenas os itens não lidos.",
+    "beneficio": "Tenha mais controle sobre as informações importantes e identifique rapidamente o que ainda precisa da sua atenção.",
+    "recursos": [
+      "Visualização de todos os avisos",
+      "Filtro exclusivo para avisos não lidos",
+      "Contagem de avisos não lidos"
+    ],
+    "imagem": "images/avisos.png"
+  },
+  {
+    "nome": "Configurações Grupo",
+    "titulo": "Tenha controle completo sobre a moderação do seu grupo",
+    "descricao": "Configure como o grupo será gerenciado, defina filtros de conteúdo, personalize punições e automatize ações para manter as conversas organizadas e seguras.",
+    "beneficio": "Reduza o trabalho dos administradores e mantenha o grupo sob controle com regras automáticas, proteção contra excesso de mensagens e ações personalizadas — sem moderar administradores.",
+    "recursos": [
+      "Escolha entre moderação automática, com punição imediata, ou revisão humana das sugestões da IA.",
+      "Bloqueie links, palavras inadequadas, imagens ilícitas, visualizações únicas e qualquer tipo de mídia.",
+      "Configure advertências, mensagens personalizadas e o número de infrações antes da remoção.",
+      "Programe horários para fechar e reabrir o grupo, com dias da semana e motivo exibido aos participantes.",
+      "Ative o anti-flood para fechar temporariamente o grupo quando o volume de mensagens ultrapassar o limite definido.",
+      "Envie saudações automáticas para novos membros e remova participantes que ficarem inativos pelo período configurado.",
+      "Feche ou reabra o grupo imediatamente, com opção de definir um motivo e prazo para reabertura.",
+      "Acompanhe as advertências registradas no grupo em um único lugar."
+    ],
+    "imagem": "images/configuracoes-grupo.png"
+  }
+]

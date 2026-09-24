@@ -1,0 +1,75 @@
+@using Gasparzinho.Web.Services.Auth
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    string Active(string ctrl, string? act = null) =>
+        controller == ctrl && (act is null || action == act) ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · ModeraHub</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">Modera<span>Hub</span></div>
+        <nav class="nav">
+            <a class="@Active("Home")" asp-controller="Home" asp-action="Index">Painel</a>
+            <a class="@Active("Sessions")" asp-controller="Sessions" asp-action="Index">Sessões</a>
+            <a class="@Active("Groups")" asp-controller="Groups" asp-action="Index">Grupos</a>
+            <a class="@Active("Moderation", "Index")" asp-controller="Moderation" asp-action="Index">IA e moderação</a>
+            <a class="@Active("Moderation", "Suggestions")" asp-controller="Moderation" asp-action="Suggestions">
+                Sugestões
+                @if (ViewData["PendingSuggestions"] is int pending && pending > 0)
+                {
+                    <span class="nav-badge">@pending</span>
+                }
+            </a>
+            <a class="@Active("Groups", "Bans")" asp-controller="Groups" asp-action="Bans">Banimentos</a>
+            <a class="@Active("Settings")" asp-controller="Settings" asp-action="Index">Configurações</a>
+            <a class="@Active("Notifications")" asp-controller="Notifications" asp-action="Index">
+                Avisos
+                @if (ViewData["UnreadNotifications"] is int unread && unread > 0)
+                {
+                    <span class="nav-badge">@unread</span>
+                }
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div>@User.TenantName()</div>
+            <div class="muted">@User.Identity?.Name</div>
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin-top:.6rem">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-secondary btn-sm">Sair</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="content">
+        @if (TempData["Success"] is string success)
+        {
+            <div class="alert alert-success">@success</div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="alert alert-error">@error</div>
+        }
+        @if (TempData["TestResult"] is string testResult)
+        {
+            <div class="alert alert-info"><strong>Resultado do teste:</strong> @testResult</div>
+        }
+
+        @RenderBody()
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

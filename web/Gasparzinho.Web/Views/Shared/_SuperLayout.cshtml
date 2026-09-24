@@ -1,0 +1,49 @@
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Administração ModeraHub</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">Admin<span>istração</span></div>
+        <nav class="nav">
+            <a class="@(action == "Index" ? "active" : "")" asp-controller="Super" asp-action="Index">Clientes</a>
+            <a class="@(action == "CreateTenant" ? "active" : "")" asp-controller="Super" asp-action="CreateTenant">Novo cliente</a>
+            <a class="@(action == "SystemAi" ? "active" : "")" asp-controller="Super" asp-action="SystemAi">IA do sistema</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div>@User.Identity?.Name</div>
+            <form asp-controller="Super" asp-action="Logout" method="post" style="margin-top:.6rem">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-secondary btn-sm">Sair</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="content">
+        @if (TempData["Success"] is string success)
+        {
+            <div class="alert alert-success">@success</div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="alert alert-error">@error</div>
+        }
+
+        @RenderBody()
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
