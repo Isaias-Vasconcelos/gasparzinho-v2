@@ -7,6 +7,25 @@
     <UserSecretsId>a0a20d2e-9f91-4051-8a2e-beafb74bcaee</UserSecretsId>
   </PropertyGroup>
 
+  <!--
+    SQLite nativo. O pacote padrão embute um libe_sqlite3 feito para glibc, que
+    não carrega no Termux (Android/bionic). Lá usamos a libsqlite3 do sistema
+    (pkg install sqlite). Detectado pelo PREFIX do Termux; dá para forçar com
+    -p:UseSystemSqlite=true|false.
+  -->
+  <PropertyGroup>
+    <UseSystemSqlite Condition="'$(UseSystemSqlite)' == '' And $(PREFIX.Contains('com.termux'))">true</UseSystemSqlite>
+    <DefineConstants Condition="'$(UseSystemSqlite)' == 'true'">$(DefineConstants);USE_SYSTEM_SQLITE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseSystemSqlite)' == 'true'">
+    <PackageReference Include="SQLitePCLRaw.provider.sqlite3" Version="2.1.10" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseSystemSqlite)' != 'true'">
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.42.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
@@ -14,7 +33,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
   </ItemGroup>
 

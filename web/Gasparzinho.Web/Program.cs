@@ -7,6 +7,9 @@ using Gasparzinho.Web.Services.WhatsApp;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
+// Antes de qualquer conexão SQLite, inclusive a da tela /Setup.
+SqliteNative.Initialize();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Banco ───────────────────────────────────────────────────────────────────

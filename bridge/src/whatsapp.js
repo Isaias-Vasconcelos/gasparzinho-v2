@@ -4,12 +4,26 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
 const config = require('./config');
 const appClient = require('./appClient');
 
-ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfmpegPath(resolveFfmpegPath());
+
+/**
+ * O @ffmpeg-installer não tem binário para Android e lança erro já no
+ * require — no Termux isso derrubava a bridge na partida. Lá (ou com
+ * FFMPEG_PATH definido) usamos o ffmpeg do sistema: pkg install ffmpeg.
+ */
+function resolveFfmpegPath() {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  try {
+    return require('@ffmpeg-installer/ffmpeg').path;
+  } catch (err) {
+    console.warn(`[media] ffmpeg embutido indisponível (${err.message || err}); usando o do sistema`);
+    return 'ffmpeg';
+  }
+}
 
 let _baileys = null;
 async function loadBaileys() {

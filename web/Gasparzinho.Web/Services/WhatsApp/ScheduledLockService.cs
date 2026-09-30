@@ -22,21 +22,40 @@ public class ScheduledLockService(
     /// </summary>
     private readonly Dictionary<string, DateTime> _fired = [];
 
-    private TimeZoneInfo TimeZone
+    private TimeZoneInfo? _zone;
+
+    /// <summary>Resolvido uma vez: o fuso não muda com a aplicação no ar.</summary>
+    private TimeZoneInfo TimeZone => _zone ??= ResolveTimeZone();
+
+    /// <summary>
+    /// Fuso nomeado (Schedule:TimeZone) ou, se o sistema não tiver a base de
+    /// fusos, o deslocamento fixo de Schedule:UtcOffset. É o caso do Termux:
+    /// o Android não expõe /usr/share/zoneinfo, e o fuso "local" lá costuma
+    /// ser UTC — os grupos fechariam 3 horas antes do horário de Brasília.
+    /// </summary>
+    private TimeZoneInfo ResolveTimeZone()
     {
-        get
+        var id = config["Schedule:TimeZone"] ?? "America/Sao_Paulo";
+        try
         {
-            var id = config["Schedule:TimeZone"] ?? "America/Sao_Paulo";
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+            return TimeZoneInfo.FindSystemTimeZoneById(id);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            // Brasília não tem horário de verão desde 2019, então -03:00 fixo
+            // equivale ao fuso nomeado.
+            var offsetText = config["Schedule:UtcOffset"] ?? "-03:00";
+            if (TimeSpan.TryParse(offsetText.TrimStart('+'), out var offset))
             {
                 logger.LogWarning(
-                    "Fuso \"{Id}\" não reconhecido; usando o fuso do servidor.", id);
-                return TimeZoneInfo.Local;
+                    "Fuso \"{Id}\" não encontrado no sistema; usando UTC{Offset} fixo (Schedule:UtcOffset).",
+                    id, offsetText);
+                return TimeZoneInfo.CreateCustomTimeZone(id, offset, id, id);
             }
+
+            logger.LogWarning(
+                "Fuso \"{Id}\" não encontrado e Schedule:UtcOffset inválido; usando o fuso do servidor.", id);
+            return TimeZoneInfo.Local;
         }
     }
 

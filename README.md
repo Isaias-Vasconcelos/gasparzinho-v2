@@ -58,9 +58,16 @@ rodar a varredura na hora.
 
 ## Requisitos
 
-- .NET SDK 9 (fixado em `global.json`)
-- MySQL 8
+- .NET SDK 9 (qualquer 9.0.1xx ou mais novo, conforme `global.json`)
+- Banco: **SQLite** (arquivo `wpp.db`, nada a instalar) ou **MySQL 8**
 - Node.js 20+ (apenas para a bridge)
+
+## Banco de dados
+
+Na primeira execução toda página leva a `/Setup`, onde o administrador escolhe
+entre SQLite e MySQL (com as credenciais `SuperAdmin` do `appsettings.json`).
+A escolha fica em `App_Data/database.json` e pode ser trocada depois em
+*Banco de dados*, no painel do superadmin, opcionalmente copiando os dados.
 
 ## Configuração
 
@@ -88,6 +95,7 @@ Chaves disponíveis:
 | `SuperAdmin:Username` | Usuário do administrador da plataforma (padrão `admin`) |
 | `SuperAdmin:Password` | Senha inicial. Sem ela, nenhum superadmin é criado |
 | `Schedule:TimeZone` | Fuso do bloqueio por horário (padrão `America/Sao_Paulo`) |
+| `Schedule:UtcOffset` | Deslocamento usado se o sistema não tiver o fuso acima, como no Termux (padrão `-03:00`) |
 | `Schedule:InactivityCheckMinutes` | Intervalo da varredura de inatividade (padrão 60, mínimo 5) |
 
 ### 2. Bridge (`bridge/`)
@@ -113,7 +121,30 @@ cd bridge && npm start
 cd src/Gasparzinho.Web && dotnet run
 ```
 
-O banco é criado e migrado automaticamente na primeira execução.
+O banco é criado e migrado automaticamente depois da escolha em `/Setup`.
+
+## Termux (Android)
+
+O Termux é Android (bionic, não glibc), então duas bibliotecas nativas vêm do
+sistema em vez dos pacotes npm/NuGet: o **SQLite** e o **ffmpeg**. A troca é
+automática — o `.csproj` detecta o Termux pelo `PREFIX` e a bridge cai no
+`ffmpeg` do sistema — mas **a aplicação precisa ser compilada no próprio
+Termux**; uma build feita no Windows ou num Linux comum leva o SQLite errado.
+
+```bash
+pkg install dotnet-sdk-9.0 nodejs sqlite ffmpeg
+
+# bridge — sem o sharp (opcional no Baileys e sem binário para Android)
+cd bridge && npm install --omit=peer && cd ..
+
+# aplicação — limpe bin/obj vindos de outra máquina antes da primeira build
+cd web/Gasparzinho.Web
+rm -rf bin obj
+dotnet run
+```
+
+Se a compilação acontecer fora do Termux para rodar nele, force a variante com
+`-p:UseSystemSqlite=true`.
 
 ## Acesso
 

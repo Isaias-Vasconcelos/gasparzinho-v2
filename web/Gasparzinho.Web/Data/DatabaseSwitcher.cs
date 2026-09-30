@@ -41,7 +41,11 @@ public class DatabaseSwitcher(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                throw new DatabaseSetupException($"Não foi possível criar as tabelas: {ex.Message}", ex);
+                // A causa útil costuma estar embrulhada (ex.: TypeInitializationException
+                // sobre a biblioteca nativa do SQLite que não carregou).
+                logger.LogError(ex, "Falha ao criar as tabelas em {Provider}", target.Provider);
+                throw new DatabaseSetupException(
+                    $"Não foi possível criar as tabelas: {ex.GetBaseException().Message}", ex);
             }
 
             var copied = 0;
@@ -61,7 +65,9 @@ public class DatabaseSwitcher(
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    throw new DatabaseSetupException($"A cópia dos dados falhou: {ex.Message}", ex);
+                    logger.LogError(ex, "Falha ao copiar os dados para {Provider}", target.Provider);
+                    throw new DatabaseSetupException(
+                        $"A cópia dos dados falhou: {ex.GetBaseException().Message}", ex);
                 }
             }
 
