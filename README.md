@@ -137,7 +137,7 @@ pkg install dotnet-sdk-9.0 nodejs sqlite ffmpeg
 # bridge — sem o sharp (opcional no Baileys e sem binário para Android)
 cd bridge && npm install --omit=peer && cd ..
 
-# aplicação — limpe bin/obj vindos de outra máquina antes da primeira build
+# aplicação — limpar bin/obj evita DLLs de builds de outras máquinas
 cd web/Gasparzinho.Web
 rm -rf bin obj
 dotnet run
