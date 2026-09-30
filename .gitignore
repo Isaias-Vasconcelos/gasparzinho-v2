@@ -25,8 +25,11 @@ App_Data/
 # =========================
 # SESSIONS / AUTH
 # =========================
+# Credenciais do WhatsApp da bridge. Caminho explícito: um "sessions/" solto
+# também ignorava web/.../Views/Sessions (o Git no Windows não diferencia
+# maiúsculas), e as views de sessão nunca iam para o repositório.
 backend/data/sessions/
-sessions/
+bridge/data/
 auth_info/
 *.session
 
@@ -43,9 +46,15 @@ pnpm-debug.log*
 # =========================
 # BUILD FILES
 # =========================
-dist/
-build/
+# Ancorados na raiz: um "dist/" solto ignorava wwwroot/lib/*/dist, onde ficam
+# o jQuery e a validação usados pelos layouts.
+/dist/
+/build/
 coverage/
+
+# Saída de build do .NET — DLLs de outra máquina quebram o SQLite no Termux.
+bin/
+obj/
 .next/
 .nuxt/
 .cache/

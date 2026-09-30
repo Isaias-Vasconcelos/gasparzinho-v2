@@ -1,0 +1,117 @@
+@model Gasparzinho.Web.Models.SessionListViewModel
+@{
+    ViewData["Title"] = "Sessões";
+}
+
+<h1>Sessões WhatsApp</h1>
+<p class="page-subtitle">
+    Cada sessão é um número conectado por QR code ou por código de pareamento.
+    Uso: <strong>@Gasparzinho.Web.Models.DashboardViewModel.Usage(Model.Sessions.Count, Model.MaxSessions)</strong>
+    no perfil @Model.PlanName.
+</p>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Nova sessão</h2>
+        @if (!Model.CanCreate)
+        {
+            <p>O limite do perfil @Model.PlanName foi atingido. Solicite um perfil maior ao administrador.</p>
+        }
+    </div>
+
+    @if (Model.CanCreate)
+    {
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div class="field">
+                <input type="text" name="newSessionName" placeholder="Ex: Atendimento principal" required maxlength="255" />
+            </div>
+            <button type="submit" class="btn">Criar sessão</button>
+        </form>
+    }
+</div>
+
+@if (Model.Sessions.Count == 0)
+{
+    <div class="card">
+        <div class="empty">Nenhuma sessão ainda. Crie a primeira acima.</div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Sessão</th>
+                <th>Número</th>
+                <th>Situação</th>
+                <th>Grupos</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var session in Model.Sessions)
+            {
+                <tr>
+                    <td>
+                        <div><strong>@session.Name</strong></div>
+                        <div class="muted" style="font-size:.8rem">
+                            desde @session.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                        </div>
+                    </td>
+                    <td>
+                        <div class="mono">@(session.Phone ?? "—")</div>
+                        @if (!string.IsNullOrWhiteSpace(session.DisplayName))
+                        {
+                            <div class="muted" style="font-size:.8rem">@session.DisplayName</div>
+                        }
+                    </td>
+                    <td><span class="pill @session.StatusPill">@session.StatusLabel</span></td>
+                    <td class="muted">@session.ManagedGroupCount</td>
+                    <td>
+                        <div class="actions">
+                            @if (session.IsConnected)
+                            {
+                                <a class="btn btn-secondary btn-sm"
+                                   asp-controller="Groups" asp-action="Index"
+                                   asp-route-sessionId="@session.Id">Grupos</a>
+
+                                <form asp-action="Disconnect" method="post"
+                                      onsubmit="return confirm('Desconectar esta sessão? A moderação para até reconectar.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@session.Id" />
+                                    <button type="submit" class="btn btn-secondary btn-sm">Desconectar</button>
+                                </form>
+                            }
+                            else if (session.IsBusy)
+                            {
+                                <a class="btn btn-sm" asp-action="Qr" asp-route-id="@session.Id"
+                                   asp-route-mode="@(session.IsWaitingCode ? "code" : "qr")">Continuar pareamento</a>
+                            }
+                            else
+                            {
+                                <form asp-action="Connect" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@session.Id" />
+                                    <button type="submit" class="btn btn-sm">Conectar por QR</button>
+                                </form>
+
+                                <a class="btn btn-secondary btn-sm" asp-action="Qr" asp-route-id="@session.Id"
+                                   asp-route-mode="code">Conectar por código</a>
+                            }
+
+                            <form asp-action="Delete" method="post"
+                                  onsubmit="return confirm('Remover a sessão @session.Name? As configurações dos grupos dela serão apagadas.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@session.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,396 @@
+@model Gasparzinho.Web.Models.SessionQrViewModel
+@{
+    ViewData["Title"] = "Conectar sessão";
+    var isCode = Model.Mode == "code";
+}
+
+<h1>@Model.SessionName</h1>
+<p class="page-subtitle">
+    Conecte o número lendo um QR code com a câmera ou digitando um código de
+    pareamento no celular.
+</p>
+
+<div id="connect-panes">
+    <div class="tabs" id="mode-tabs">
+        <a asp-action="Qr" asp-route-id="@Model.SessionId" asp-route-mode="qr"
+           data-tab="qr" class="@(isCode ? "" : "active")">QR code</a>
+        <a asp-action="Qr" asp-route-id="@Model.SessionId" asp-route-mode="code"
+           data-tab="code" class="@(isCode ? "active" : "")">Código de pareamento</a>
+    </div>
+
+    <div class="card">
+        <div id="qr-alert"></div>
+
+        <section id="pane-qr" hidden="@(isCode ? "hidden" : null)">
+            <p class="muted">
+                No WhatsApp do celular: <strong>Configurações → Dispositivos conectados →
+                Conectar dispositivo</strong>, e aponte a câmera para o código.
+            </p>
+
+            <div class="qr-stage">
+                <div class="qr-frame" id="qr-frame" hidden>
+                    <img id="qr-image" alt="QR code de pareamento" />
+                    <div class="qr-veil" id="qr-veil" hidden>Renovando o código…</div>
+                </div>
+
+                <p class="muted" id="qr-hint">Preparando o código de pareamento…</p>
+            </div>
+
+            <form asp-action="Connect" method="post" id="retry-form" hidden>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.SessionId" />
+                <button type="submit" class="btn">Gerar QR code</button>
+            </form>
+        </section>
+
+        <section id="pane-code" hidden="@(isCode ? null : "hidden")">
+            <p class="muted">
+                No WhatsApp do celular: <strong>Configurações → Dispositivos conectados →
+                Conectar dispositivo → Conectar com número de telefone</strong>, e digite
+                o código que aparecer aqui.
+            </p>
+
+            <div class="qr-stage">
+                <div class="pairing-code mono" id="code-value" hidden></div>
+                <p class="muted" id="code-hint"></p>
+            </div>
+
+            <form asp-action="Connect" method="post" id="code-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.SessionId" />
+                <div class="field">
+                    <label for="pairing-phone">Número do WhatsApp (DDI + DDD + número)</label>
+                    <input type="tel" id="pairing-phone" name="phone" value="55"
+                           placeholder="5511999998888" inputmode="numeric"
+                           required maxlength="20" />
+                </div>
+                <button type="submit" class="btn" id="code-submit">Gerar código</button>
+            </form>
+        </section>
+    </div>
+</div>
+
+<div class="actions">
+    <a class="btn btn-secondary" asp-action="Index">Voltar às sessões</a>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            var statusUrl = '@Url.Action("Status", new { id = Model.SessionId })';
+            var sessionsUrl = '@Url.Action("Index")';
+
+            // O QR dura entre 20 e 60 segundos. Consultar mais rápido que
+            // isso é o que garante que a tela nunca mostre o código anterior.
+            var POLL_MS = 1500;
+            var POLL_MAX_MS = 8000;
+            var REQUEST_TIMEOUT_MS = 10000;
+            // Uma leitura isolada de "disconnected" pode ser só a troca de
+            // socket entre duas rodadas de pareamento; só desistimos na segunda.
+            var DISCONNECT_TOLERANCE = 2;
+            var ACTIVE = ['connecting', 'qr_ready', 'code_ready'];
+
+            var panes = document.getElementById('connect-panes');
+            var tabs = document.querySelectorAll('#mode-tabs [data-tab]');
+            var paneQr = document.getElementById('pane-qr');
+            var paneCode = document.getElementById('pane-code');
+
+            var frame = document.getElementById('qr-frame');
+            var image = document.getElementById('qr-image');
+            var veil = document.getElementById('qr-veil');
+            var hint = document.getElementById('qr-hint');
+            var retryForm = document.getElementById('retry-form');
+
+            var codeValue = document.getElementById('code-value');
+            var codeHint = document.getElementById('code-hint');
+            var codeSubmit = document.getElementById('code-submit');
+            var phoneInput = document.getElementById('pairing-phone');
+            var phoneTouched = false;
+
+            var alertBox = document.getElementById('qr-alert');
+
+            var pollTimer = null;
+            var tickTimer = null;
+            var requestSeq = 0;      // descarta respostas que chegam fora de ordem
+            var inFlight = false;
+            var failures = 0;
+            var disconnects = 0;
+            var sawActive = false;   // houve pareamento em curso nesta tela
+            var connectionWarn = false;
+            var currentQr = null;
+            var currentCode = null;
+            var expiresAt = 0;
+            var finished = @(Model.IsConnected ? "true" : "false");
+
+            function setAlert(kind, text) {
+                alertBox.innerHTML = text
+                    ? '<div class="alert alert-' + kind + '">' + text + '</div>'
+                    : '';
+            }
+
+            // ── Abas ────────────────────────────────────────────────────────
+
+            // Trocar de aba só muda o que se vê; trocar de método de verdade
+            // é enviar o formulário da aba, que reinicia o pareamento.
+            function selectTab(name) {
+                for (var i = 0; i < tabs.length; i++) {
+                    tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === name);
+                }
+                paneQr.hidden = name !== 'qr';
+                paneCode.hidden = name !== 'code';
+
+                var url = new URL(window.location.href);
+                url.searchParams.set('mode', name);
+                history.replaceState(null, '', url);
+            }
+
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].addEventListener('click', function (e) {
+                    e.preventDefault();
+                    selectTab(this.getAttribute('data-tab'));
+                });
+            }
+
+            phoneInput.addEventListener('input', function () { phoneTouched = true; });
+
+            // ── QR ──────────────────────────────────────────────────────────
+
+            function showQr(dataUrl, expiresInMs) {
+                if (dataUrl !== currentQr) {
+                    // Trocar só o src evita o pisca-pisca de recriar o elemento,
+                    // que dá a impressão de que a tela está travando.
+                    currentQr = dataUrl;
+                    image.src = dataUrl;
+                }
+
+                expiresAt = expiresInMs > 0 ? Date.now() + expiresInMs : 0;
+                frame.hidden = false;
+                veil.hidden = true;
+                updateCountdown();
+            }
+
+            function hideQr(text) {
+                frame.hidden = true;
+                currentQr = null;
+                expiresAt = 0;
+                hint.textContent = text;
+            }
+
+            function updateCountdown() {
+                if (finished || frame.hidden) return;
+
+                var left = expiresAt ? Math.ceil((expiresAt - Date.now()) / 1000) : 0;
+
+                if (left > 0) {
+                    veil.hidden = true;
+                    hint.textContent = 'Este código vale por mais ' + left +
+                        (left === 1 ? ' segundo.' : ' segundos.');
+                } else {
+                    // Vencido: cobrimos o código para ninguém tentar ler algo
+                    // que o WhatsApp já vai recusar.
+                    veil.hidden = false;
+                    hint.textContent = 'Gerando um código novo…';
+                }
+            }
+
+            function renderQr(data, active) {
+                var mine = active && data.mode === 'qr';
+                retryForm.hidden = mine;
+
+                if (!mine) {
+                    hideQr(active
+                        ? 'O pareamento está em andamento pelo código. Gere um QR para trocar de método.'
+                        : 'Gere um QR code e leia com a câmera do celular.');
+                } else if (data.qrCode) {
+                    showQr(data.qrCode, data.qrExpiresInMs || 0);
+                } else {
+                    hideQr('Gerando o código de pareamento…');
+                }
+            }
+
+            // ── Código de pareamento ────────────────────────────────────────
+
+            function formatCode(code) {
+                // O WhatsApp mostra o código em dois blocos de quatro.
+                return code.length === 8 ? code.slice(0, 4) + '-' + code.slice(4) : code;
+            }
+
+            function renderCode(data, active) {
+                var mine = active && data.mode === 'code';
+
+                if (data.pairingPhone && !phoneTouched) phoneInput.value = data.pairingPhone;
+
+                if (mine && data.pairingCode) {
+                    if (data.pairingCode !== currentCode) {
+                        // Código novo (a rodada anterior expirou): destaca a troca
+                        // para ninguém continuar digitando o antigo.
+                        if (currentCode) setAlert('warn', 'O código anterior expirou. Use o novo código abaixo.');
+                        currentCode = data.pairingCode;
+                        codeValue.textContent = formatCode(data.pairingCode);
+                    }
+                    codeValue.hidden = false;
+                    codeHint.textContent = 'Código gerado para +' + data.pairingPhone +
+                        '. Ele é trocado sozinho aqui se expirar. Se o celular disser que o código ' +
+                        'é inválido, confira se o número é exatamente o da conta (alguns números ' +
+                        'antigos estão registrados sem o 9 depois do DDD).';
+                    codeSubmit.textContent = 'Gerar para outro número';
+                    return;
+                }
+
+                codeValue.hidden = true;
+                currentCode = null;
+                codeSubmit.textContent = 'Gerar código';
+                codeHint.textContent = mine
+                    ? 'Gerando o código de pareamento…'
+                    : (active ? 'O pareamento está em andamento pelo QR code. Gere um código para trocar de método.' : '');
+            }
+
+            // ── Consulta ────────────────────────────────────────────────────
+
+            function finish(kind, text, redirect) {
+                finished = true;
+                stop();
+                panes.hidden = true;
+                // O aviso mora dentro do painel que acabou de sumir.
+                panes.insertAdjacentElement('beforebegin', alertBox);
+                setAlert(kind, text);
+                if (redirect) setTimeout(function () { window.location = sessionsUrl; }, 1200);
+            }
+
+            /** Pareamento encerrado sem sucesso: sobra escolher o método de novo. */
+            function end(data) {
+                stop();
+                renderQr(data, false);
+                renderCode(data, false);
+
+                if (data.error) {
+                    setAlert('error', data.error);
+                } else if (sawActive) {
+                    setAlert('error', data.mode === 'code'
+                        ? 'O pareamento foi encerrado sem que o código fosse digitado. Gere um novo para tentar de novo.'
+                        : 'O pareamento foi encerrado sem leitura do código. Gere um novo para tentar de novo.');
+                } else {
+                    setAlert('', '');
+                }
+            }
+
+            function stop() {
+                if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+                if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+            }
+
+            function schedule(delay) {
+                if (finished) return;
+                if (pollTimer) clearTimeout(pollTimer);
+                pollTimer = setTimeout(poll, delay);
+            }
+
+            function nextDelay(expiresInMs) {
+                if (failures > 0) {
+                    // Servidor fora do ar: espaça as tentativas em vez de
+                    // martelar a rede.
+                    return Math.min(POLL_MAX_MS, POLL_MS * Math.pow(2, failures - 1));
+                }
+                // Perto do vencimento, acorda logo depois da troca do código.
+                if (expiresInMs > 0 && expiresInMs < POLL_MS) return expiresInMs + 250;
+                return POLL_MS;
+            }
+
+            async function poll() {
+                if (finished || inFlight) return;
+
+                inFlight = true;
+                var seq = ++requestSeq;
+                var controller = new AbortController();
+                var abortTimer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
+
+                try {
+                    var response = await fetch(statusUrl, {
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                    var data = await response.json();
+
+                    // Uma resposta lenta de um poll anterior não pode repor na
+                    // tela um código que já foi substituído.
+                    if (seq !== requestSeq || finished) return;
+
+                    apply(data);
+                } catch (err) {
+                    if (seq !== requestSeq || finished) return;
+
+                    failures++;
+                    if (failures >= 3) {
+                        connectionWarn = true;
+                        setAlert('warn', 'Sem comunicação com o servidor. Tentando novamente…');
+                    }
+                    schedule(nextDelay(0));
+                } finally {
+                    clearTimeout(abortTimer);
+                    inFlight = false;
+                }
+            }
+
+            function apply(data) {
+                failures = 0;
+
+                if (!data.bridgeOnline) {
+                    connectionWarn = true;
+                    setAlert('warn', 'Serviço do WhatsApp indisponível. Reconectando…');
+                    hideQr('Aguardando o serviço voltar…');
+                    schedule(POLL_MAX_MS);
+                    return;
+                }
+
+                if (data.status === 'connected') {
+                    finish('success', 'Sessão conectada. Redirecionando…', true);
+                    return;
+                }
+
+                if (ACTIVE.indexOf(data.status) === -1) {
+                    // Erro explícito da bridge não precisa de segunda leitura.
+                    if (data.error || ++disconnects >= DISCONNECT_TOLERANCE) {
+                        end(data);
+                        return;
+                    }
+                    hideQr(sawActive ? 'Retomando o pareamento…' : '');
+                    schedule(POLL_MS);
+                    return;
+                }
+
+                // Avisos de conexão e de retomada saem quando tudo volta ao
+                // normal; o de "código expirou" fica até a próxima transição.
+                if (!sawActive || disconnects > 0 || connectionWarn) setAlert('', '');
+                connectionWarn = false;
+                disconnects = 0;
+                sawActive = true;
+
+                renderQr(data, true);
+                renderCode(data, true);
+
+                schedule(nextDelay(data.mode === 'qr' ? (data.qrExpiresInMs || 0) : 0));
+            }
+
+            if (finished) {
+                finish('success', 'Sessão conectada.', false);
+            } else {
+                tickTimer = setInterval(updateCountdown, 500);
+
+                // Em aba oculta o navegador estrangula os timers e o código na
+                // tela envelhece; ao voltar, consultamos na hora.
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden && !finished && pollTimer) schedule(0);
+                });
+                window.addEventListener('pagehide', stop);
+
+                poll();
+            }
+        })();
+    </script>
+}
