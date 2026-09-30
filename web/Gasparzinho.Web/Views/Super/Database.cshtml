@@ -1,0 +1,46 @@
+@using Gasparzinho.Web.Data
+@model Gasparzinho.Web.Models.DatabaseSettingsViewModel
+@{
+    ViewData["Title"] = "Banco de dados";
+    Layout = "_SuperLayout";
+}
+
+<h1>Banco de dados</h1>
+<p class="page-subtitle">
+    Todos os dados da aplicação ficam no banco em uso. Ao trocar, as próximas
+    gravações já vão para o banco novo, sem reiniciar.
+</p>
+
+<div class="card">
+    <div class="card-head"><h2>Em uso</h2></div>
+    <p>
+        <strong>@DatabaseProviders.Label(Model.CurrentProvider)</strong>
+        <span class="muted mono">@Model.CurrentTarget</span>
+    </p>
+</div>
+
+<form asp-action="Database" method="post"
+      onsubmit="return confirm('Trocar o banco de dados agora? Tudo que for gravado a partir daqui vai para o banco novo.');">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <div class="card">
+        <div class="card-head"><h2>Trocar de banco</h2></div>
+
+        <partial name="_DatabaseChoiceFields" model="Model" />
+
+        <div class="field checkbox">
+            <input asp-for="CopyData" type="checkbox" />
+            <label asp-for="CopyData"></label>
+        </div>
+        <div class="hint">
+            Leva clientes, sessões, grupos e todo o resto. O banco novo precisa estar
+            vazio. Desmarcado, a aplicação passa a usar os dados que já estiverem lá
+            (ou começa do zero) e você precisará entrar de novo.
+        </div>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn">Trocar banco</button>
+    </div>
+</form>

@@ -18,6 +18,8 @@ namespace Gasparzinho.Web.Controllers;
 [Authorize(Policy = "SuperAdmin")]
 public class SuperController(
     AppDbContext db,
+    DatabaseSettingsStore databaseStore,
+    DatabaseSwitcher databaseSwitcher,
     ILogger<SuperController> logger) : Controller
 {
     // ── Login ───────────────────────────────────────────────────────────────
@@ -399,6 +401,59 @@ public class SuperController(
 
         TempData["Success"] = "IA do sistema reativada.";
         return RedirectToAction(nameof(SystemAi));
+    }
+
+    // ── Banco de dados ──────────────────────────────────────────────────────
+
+    [HttpGet]
+    public IActionResult Database() => View(DatabaseModel(new DatabaseSettingsViewModel()));
+
+    /// <summary>
+    /// Troca o banco em uso. Vale na hora para todas as requisições seguintes;
+    /// o que for gravado durante a cópia ainda cai no banco antigo.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Database(DatabaseSettingsViewModel form, CancellationToken ct)
+    {
+        DatabaseSwitchResult result;
+        try
+        {
+            result = await databaseSwitcher.ApplyAsync(
+                form.Provider, form.ConnectionString, form.CopyData, ct);
+        }
+        catch (DatabaseSetupException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(DatabaseModel(form));
+        }
+
+        var label = DatabaseProviders.Label(result.Settings.Provider);
+
+        if (!form.CopyData)
+        {
+            // Sem cópia, o superadmin deste login pode nem existir no banco
+            // novo (lá ele é recriado a partir do appsettings).
+            await HttpContext.SignOutAsync(AuthSchemes.Super);
+            TempData["Success"] = $"Banco trocado para {label}. Entre de novo com o superadmin.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        TempData["Success"] = $"Banco trocado para {label}. {result.CopiedRows} registros copiados.";
+        return RedirectToAction(nameof(Database));
+    }
+
+    private DatabaseSettingsViewModel DatabaseModel(DatabaseSettingsViewModel model)
+    {
+        var current = databaseStore.Current!;
+        model.CurrentProvider = current.Provider;
+        model.CurrentTarget = current.Provider == DatabaseProviders.Sqlite
+            ? databaseStore.SqlitePath
+            : DatabaseSettingsViewModel.MaskConnectionString(current.ConnectionString);
+        model.SqlitePath = databaseStore.SqlitePath;
+        // A senha salva nunca volta para a tela.
+        model.ConnectionString = null;
+        return model;
     }
 
     private Task<List<Plan>> LoadPlansAsync(CancellationToken ct) =>

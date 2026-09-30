@@ -17,14 +17,19 @@ public record BridgeMember(
 /// <summary>
 /// Estado ao vivo de uma conexão na bridge. <paramref name="QrExpiresInMs"/> é
 /// o que sobra do código atual: zero significa que ele já venceu e o próximo
-/// está a caminho.
+/// está a caminho. <paramref name="Mode"/> é "qr" ou "code" (código de
+/// pareamento digitado no celular, em <paramref name="PairingCode"/>).
 /// </summary>
 public record BridgeStatus(
     [property: JsonPropertyName("status")] string Status,
     [property: JsonPropertyName("phone")] string? Phone,
     [property: JsonPropertyName("displayName")] string? DisplayName,
     [property: JsonPropertyName("qrCode")] string? QrCode,
-    [property: JsonPropertyName("qrExpiresInMs")] int QrExpiresInMs = 0);
+    [property: JsonPropertyName("qrExpiresInMs")] int QrExpiresInMs = 0,
+    [property: JsonPropertyName("mode")] string Mode = "qr",
+    [property: JsonPropertyName("pairingCode")] string? PairingCode = null,
+    [property: JsonPropertyName("pairingPhone")] string? PairingPhone = null,
+    [property: JsonPropertyName("error")] string? Error = null);
 
 public class BridgeException(string message, Exception? inner = null)
     : Exception(message, inner);
@@ -40,8 +45,13 @@ public class WhatsAppBridgeClient(
 {
     private HttpClient Client => httpFactory.CreateClient("bridge");
 
-    public Task<BridgeStatus> ConnectAsync(string sessionId, CancellationToken ct = default) =>
-        PostAsync<BridgeStatus>($"sessions/{sessionId}/connect", null, ct);
+    /// <summary>
+    /// Inicia o pareamento. Com <paramref name="pairingPhone"/> (só dígitos,
+    /// com DDI) a bridge gera um código para digitar no celular; sem ele, QR.
+    /// </summary>
+    public Task<BridgeStatus> ConnectAsync(
+        string sessionId, string? pairingPhone = null, CancellationToken ct = default) =>
+        PostAsync<BridgeStatus>($"sessions/{sessionId}/connect", new { phone = pairingPhone }, ct);
 
     public Task DisconnectAsync(string sessionId, CancellationToken ct = default) =>
         PostAsync($"sessions/{sessionId}/disconnect", null, ct);

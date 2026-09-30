@@ -80,7 +80,7 @@ public class BridgeWebhookController(
 
     /// <summary>Estados que a bridge pode reportar; qualquer outro é recusado.</summary>
     private static readonly HashSet<string> KnownStatuses =
-        ["disconnected", "connecting", "qr_ready", "connected"];
+        ["disconnected", "connecting", "qr_ready", "code_ready", "connected"];
 
     /// <summary>Compara o token compartilhado; sem token configurado, nada é aceito.</summary>
     private bool IsAuthorized()

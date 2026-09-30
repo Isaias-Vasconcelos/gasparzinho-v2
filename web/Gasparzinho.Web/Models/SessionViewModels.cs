@@ -14,13 +14,15 @@ public class SessionRow
 
     public bool IsConnected => Status == "connected";
     public bool IsWaitingQr => Status == "qr_ready";
-    public bool IsBusy => Status is "connecting" or "qr_ready";
+    public bool IsWaitingCode => Status == "code_ready";
+    public bool IsBusy => Status is "connecting" or "qr_ready" or "code_ready";
 
     public string StatusLabel => Status switch
     {
         "connected"    => "Conectada",
         "connecting"   => "Conectando",
         "qr_ready"     => "Aguardando leitura do QR",
+        "code_ready"   => "Aguardando código no celular",
         _              => "Desconectada",
     };
 
@@ -29,6 +31,7 @@ public class SessionRow
         "connected"  => "pill-ok",
         "connecting" => "pill-info",
         "qr_ready"   => "pill-warn",
+        "code_ready" => "pill-warn",
         _            => "pill-muted",
     };
 }
@@ -50,14 +53,16 @@ public class SessionListViewModel
 }
 
 /// <summary>
-/// Tela de leitura do QR code. O código não vem daqui: ele muda a cada poucos
-/// segundos e é buscado ao vivo pela própria página.
+/// Tela de conexão, por QR code ou por código de pareamento. Nenhum dos dois
+/// vem daqui: eles mudam com o tempo e são buscados ao vivo pela própria página.
 /// </summary>
 public class SessionQrViewModel
 {
     public required string SessionId { get; init; }
     public required string SessionName { get; init; }
     public required string Status { get; init; }
+    /// <summary>Aba aberta ao carregar: "qr" ou "code".</summary>
+    public string Mode { get; init; } = "qr";
 
     public bool IsConnected => Status == "connected";
 }

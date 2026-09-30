@@ -8,7 +8,7 @@ public class WaSession
     public string Name { get; set; } = "";
     public string? Phone { get; set; }
     public string? DisplayName { get; set; }
-    /// <summary>disconnected | connecting | qr_ready | connected</summary>
+    /// <summary>disconnected | connecting | qr_ready | code_ready | connected</summary>
     public string Status { get; set; } = "disconnected";
     /// <summary>QR em data-URL, produzido pela bridge. Limpo ao conectar.</summary>
     public string? QrCode { get; set; }

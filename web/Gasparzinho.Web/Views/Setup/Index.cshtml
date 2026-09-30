@@ -1,0 +1,37 @@
+@model Gasparzinho.Web.Models.SetupViewModel
+@{
+    ViewData["Title"] = "Configuração inicial";
+    Layout = "_AuthLayout";
+
+    ViewData["ConnectionHint"] = Model.HasConfiguredMySql
+        ? "Em branco, usa a string definida em appsettings.json (ConnectionStrings:Default). O banco é criado se ainda não existir."
+        : null;
+}
+
+<h1>Configuração inicial</h1>
+<p class="page-subtitle">
+    Escolha onde os dados serão guardados. Todos os dados da aplicação passam a
+    ficar no banco escolhido; dá para trocar depois pelo painel de administração.
+</p>
+
+<form asp-action="Index" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-error validation-summary-errors"></div>
+
+    <partial name="_DatabaseChoiceFields" model="Model" />
+
+    <div class="field">
+        <label asp-for="Username"></label>
+        <input asp-for="Username" autocomplete="username" />
+        <span asp-validation-for="Username" class="field-validation-error"></span>
+    </div>
+
+    <div class="field">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" autocomplete="current-password" />
+        <span asp-validation-for="Password" class="field-validation-error"></span>
+        <div class="hint">As mesmas definidas em SuperAdmin no appsettings.json.</div>
+    </div>
+
+    <button type="submit" class="btn">Criar banco e continuar</button>
+</form>

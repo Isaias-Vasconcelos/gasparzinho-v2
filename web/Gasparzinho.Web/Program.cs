@@ -10,19 +10,19 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Banco ───────────────────────────────────────────────────────────────────
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? throw new InvalidOperationException(
-        "ConnectionStrings:Default não configurada (appsettings.json).");
+// SQLite ou MySQL, escolhido pelo administrador na primeira execução (tela
+// /Setup) e trocável depois pelo painel. As opções são montadas a cada escopo
+// a partir da escolha atual, então a troca vale sem reiniciar a aplicação.
+builder.Services.AddSingleton<DatabaseSettingsStore>();
+builder.Services.AddScoped<DatabaseSwitcher>();
 
-// A versão pode ser fixada em Database:ServerVersion (ex: "8.0.36"). Sem isso,
-// é detectada na partida — o que exige o MySQL no ar nesse momento.
-var configuredVersion = builder.Configuration["Database:ServerVersion"];
-var serverVersion = string.IsNullOrWhiteSpace(configuredVersion)
-    ? ServerVersion.AutoDetect(connectionString)
-    : ServerVersion.Parse(configuredVersion);
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion));
+builder.Services.AddDbContext<AppDbContext>((services, options) =>
+{
+    var store = services.GetRequiredService<DatabaseSettingsStore>();
+    var settings = store.Current ?? throw new InvalidOperationException(
+        "Banco de dados ainda não configurado. Acesse /Setup.");
+    store.Configure(options, settings);
+});
 
 // ── Autenticação: cliente e superadmin em cookies separados ─────────────────
 builder.Services
@@ -117,6 +117,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+// Sem banco escolhido não há o que servir: páginas vão para a configuração
+// inicial e a API da bridge responde 503 (ela tenta de novo mais tarde).
+app.Use(async (context, next) =>
+{
+    var store = context.RequestServices.GetRequiredService<DatabaseSettingsStore>();
+    if (store.IsConfigured || context.Request.Path.StartsWithSegments("/Setup"))
+    {
+        await next();
+        return;
+    }
+
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        return;
+    }
+
+    context.Response.Redirect("/Setup");
+});
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -134,9 +155,13 @@ catch (Exception ex)
     // Sem banco não há aplicação — mas o erro precisa ser legível, não um stack cru.
     app.Logger.LogCritical(
         "Falha ao preparar o banco de dados: {Message}\n" +
-        "Verifique ConnectionStrings:Default e se o MySQL está acessível.", ex.Message);
+        "Verifique se o banco escolhido está acessível. Para escolher outro, " +
+        "apague App_Data/database.json e acesse /Setup.", ex.Message);
     return 1;
 }
+
+if (!app.Services.GetRequiredService<DatabaseSettingsStore>().IsConfigured)
+    app.Logger.LogWarning("Banco de dados não configurado: acesse /Setup para escolher SQLite ou MySQL.");
 
 app.Run();
 return 0;

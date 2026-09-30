@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Gasparzinho.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fd8e7c2d4e6d65875ddd81a9789289be2bb8147d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fe94ab991f9d6e8f26724aa496db4db7db164fc2")]
 [assembly: System.Reflection.AssemblyProductAttribute("Gasparzinho.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Gasparzinho.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

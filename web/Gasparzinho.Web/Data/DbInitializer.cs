@@ -8,7 +8,8 @@ namespace Gasparzinho.Web.Data;
 /// <summary>
 /// Cria o schema quando ele não existe e aplica as colunas novas ao banco que
 /// já roda em produção. Cada ALTER é tolerante a "já existe" porque o banco
-/// legado pode estar em qualquer estágio da migração.
+/// legado pode estar em qualquer estágio da migração. Os ALTERs e CREATEs
+/// abaixo são SQL de MySQL e não rodam no SQLite.
 /// </summary>
 public static class DbInitializer
 {
@@ -63,27 +64,58 @@ public static class DbInitializer
         "ALTER TABLE group_settings ADD COLUMN inactivity_last_run_at DATETIME DEFAULT NULL",
     ];
 
+    /// <summary>Prepara o banco em uso. Não faz nada se ele ainda não foi escolhido.</summary>
     public static async Task InitializeAsync(IServiceProvider services)
     {
+        if (!services.GetRequiredService<DatabaseSettingsStore>().IsConfigured) return;
+
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider
             .GetRequiredService<ILoggerFactory>().CreateLogger("DbInitializer");
 
-        // Cria o schema inteiro só quando o banco ainda não existe.
-        var created = await db.Database.EnsureCreatedAsync();
-        if (created) logger.LogInformation("Schema criado do zero");
+        await InitializeAsync(db, config, logger);
+    }
 
-        // Num banco legado, completa o que está faltando.
+    /// <summary>
+    /// Prepara um banco específico — usado também antes de ativar um banco
+    /// novo, para a troca só valer depois que ele estiver pronto.
+    /// </summary>
+    public static async Task InitializeAsync(
+        AppDbContext db, IConfiguration config, ILogger logger, CancellationToken ct = default)
+    {
+        await EnsureSchemaAsync(db, logger, ct);
+        await SeedPlansAsync(db, logger);
+        await SeedSystemAiAsync(db, logger);
+        await SeedSuperAdminAsync(db, config, logger);
+    }
+
+    /// <summary>Cria as tabelas e, num MySQL legado, completa o que falta.</summary>
+    public static async Task EnsureSchemaAsync(AppDbContext db, ILogger logger, CancellationToken ct = default)
+    {
+        // Cria o schema inteiro só quando o banco ainda não existe.
+        var created = await db.Database.EnsureCreatedAsync(ct);
+        if (created) logger.LogInformation("Schema criado do zero ({Provider})", db.Database.ProviderName);
+
+        if (db.Database.IsSqlite())
+        {
+            // WAL deixa leituras seguirem enquanto a fila da bridge grava;
+            // no modo padrão o SQLite trava o arquivo inteiro a cada escrita.
+            await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", ct);
+            return;
+        }
+
+        // Daqui para baixo é só para o schema MySQL legado: o SQLite sempre
+        // nasce do EnsureCreated, já com todas as tabelas e colunas.
         foreach (var sql in TableDefinitions)
-            await db.Database.ExecuteSqlRawAsync(sql);
+            await db.Database.ExecuteSqlRawAsync(sql, ct);
 
         foreach (var sql in Migrations)
         {
             try
             {
-                await db.Database.ExecuteSqlRawAsync(sql);
+                await db.Database.ExecuteSqlRawAsync(sql, ct);
                 logger.LogInformation("Coluna adicionada: {Sql}", sql);
             }
             catch (Exception ex)
@@ -92,11 +124,15 @@ public static class DbInitializer
                 logger.LogDebug("Migração ignorada ({Reason}): {Sql}", ex.GetType().Name, sql);
             }
         }
-
-        await SeedPlansAsync(db, logger);
-        await SeedSystemAiAsync(db, logger);
-        await SeedSuperAdminAsync(db, config, logger);
     }
+
+    /// <summary>
+    /// Credenciais do superadmin definidas na configuração. São elas que
+    /// protegem a escolha do banco na primeira execução, quando ainda não
+    /// existe banco onde conferir usuário e senha.
+    /// </summary>
+    public static (string Username, string Password) ConfiguredSuperAdmin(IConfiguration config) =>
+        (config["SuperAdmin:Username"] ?? "admin", config["SuperAdmin:Password"] ?? "jjkeys61");
 
     private static async Task SeedPlansAsync(AppDbContext db, ILogger logger)
     {
@@ -194,8 +230,7 @@ public static class DbInitializer
     private static async Task SeedSuperAdminAsync(
         AppDbContext db, IConfiguration config, ILogger logger)
     {
-        var username = config["SuperAdmin:Username"] ?? "admin";
-        var password = config["SuperAdmin:Password"] ?? "jjkeys61";
+        var (username, password) = ConfiguredSuperAdmin(config);
 
         if (await db.SuperAdmins.AnyAsync(s => s.Username == username)) return;
 

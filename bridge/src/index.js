@@ -31,8 +31,18 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 // ── Sessões ────────────────────────────────────────────────────────────────
 
 app.post('/sessions/:id/connect', handle(async (req, res) => {
-  // Idempotente: devolve o estado atual se o pareamento já estiver em curso.
-  res.json(await wa.startSession(req.params.id));
+  // Com `phone` o pareamento é por código; sem ele, por QR. Idempotente:
+  // repetir o mesmo modo devolve o pareamento que já está em curso.
+  let phone = null;
+  if (req.body?.phone) {
+    // O WhatsApp quer só dígitos, com DDI e sem o "+".
+    phone = String(req.body.phone).replace(/\D/g, '');
+    if (phone.length < 10 || phone.length > 15) {
+      return res.status(400).json({ error: 'Número inválido: use DDI + DDD + número.' });
+    }
+  }
+
+  res.json(await wa.startSession(req.params.id, { phone }));
 }));
 
 app.post('/sessions/:id/disconnect', handle(async (req, res) => {

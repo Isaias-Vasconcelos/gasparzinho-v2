@@ -17,6 +17,7 @@
             <a class="@(action == "Index" ? "active" : "")" asp-controller="Super" asp-action="Index">Clientes</a>
             <a class="@(action == "CreateTenant" ? "active" : "")" asp-controller="Super" asp-action="CreateTenant">Novo cliente</a>
             <a class="@(action == "SystemAi" ? "active" : "")" asp-controller="Super" asp-action="SystemAi">IA do sistema</a>
+            <a class="@(action == "Database" ? "active" : "")" asp-controller="Super" asp-action="Database">Banco de dados</a>
         </nav>
         <div class="sidebar-footer">
             <div>@User.Identity?.Name</div>

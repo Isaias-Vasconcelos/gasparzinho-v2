@@ -19,6 +19,8 @@ node_modules/
 *.sqlite3
 *.db-shm
 *.db-wal
+# Escolha do banco (pode conter a senha do MySQL)
+App_Data/
 
 # =========================
 # SESSIONS / AUTH

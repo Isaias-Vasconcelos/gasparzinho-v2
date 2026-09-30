@@ -82,6 +82,9 @@ public class ScheduledLockService(
         PurgeExpiredKeys(now.UtcDateTime);
 
         using var scope = scopeFactory.CreateScope();
+        // Sem banco escolhido (tela /Setup pendente) não há grupo a agendar.
+        if (!scope.ServiceProvider.GetRequiredService<DatabaseSettingsStore>().IsConfigured) return;
+
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var bridge = scope.ServiceProvider.GetRequiredService<WhatsAppBridgeClient>();
 

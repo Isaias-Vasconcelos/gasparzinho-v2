@@ -61,6 +61,9 @@ public class InactivitySweepService(
     private async Task TickAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
+        // Sem banco escolhido (tela /Setup pendente) não há grupo a varrer.
+        if (!scope.ServiceProvider.GetRequiredService<DatabaseSettingsStore>().IsConfigured) return;
+
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var inactivity = scope.ServiceProvider.GetRequiredService<InactivityService>();
 

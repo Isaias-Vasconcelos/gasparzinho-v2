@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Gasparzinho.Web.Data;
 using Gasparzinho.Web.Data.Entities;
 using Gasparzinho.Web.Services.Ai;
 
@@ -76,6 +77,67 @@ public class CreateTenantViewModel
     public DateTime? ExpiresAt { get; set; }
 
     public List<Plan> AvailablePlans { get; set; } = [];
+}
+
+/// <summary>Escolha entre SQLite e MySQL, comum à primeira execução e ao painel.</summary>
+public class DatabaseChoiceViewModel
+{
+    [Display(Name = "Banco de dados")]
+    public string Provider { get; set; } = DatabaseProviders.Sqlite;
+
+    [Display(Name = "String de conexão do MySQL")]
+    [MaxLength(1000)]
+    public string? ConnectionString { get; set; }
+
+    /// <summary>Onde o wpp.db fica, para o administrador saber o que copiar no backup.</summary>
+    public string SqlitePath { get; set; } = "";
+
+    public string[] AvailableProviders { get; } = [DatabaseProviders.Sqlite, DatabaseProviders.MySql];
+}
+
+/// <summary>
+/// Primeira execução. Ainda não há banco onde conferir o superadmin, então a
+/// tela pede as credenciais definidas em appsettings (SuperAdmin).
+/// </summary>
+public class SetupViewModel : DatabaseChoiceViewModel
+{
+    [Required(ErrorMessage = "Informe o usuário.")]
+    [Display(Name = "Usuário do superadmin")]
+    public string Username { get; set; } = "";
+
+    [Required(ErrorMessage = "Informe a senha.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Senha do superadmin")]
+    public string Password { get; set; } = "";
+
+    /// <summary>Há uma string em ConnectionStrings:Default para usar se o campo ficar em branco.</summary>
+    public bool HasConfiguredMySql { get; set; }
+}
+
+/// <summary>Troca do banco em uso pelo painel do superadmin.</summary>
+public class DatabaseSettingsViewModel : DatabaseChoiceViewModel
+{
+    [Display(Name = "Copiar os dados atuais para o banco novo")]
+    public bool CopyData { get; set; } = true;
+
+    public string CurrentProvider { get; set; } = "";
+
+    /// <summary>Destino atual sem a senha, só para conferência.</summary>
+    public string? CurrentTarget { get; set; }
+
+    public static string? MaskConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString)) return null;
+        try
+        {
+            var builder = new MySqlConnector.MySqlConnectionStringBuilder(connectionString);
+            return $"{builder.Server}:{builder.Port} / {builder.Database} (usuário {builder.UserID})";
+        }
+        catch (ArgumentException)
+        {
+            return "(string de conexão ilegível)";
+        }
+    }
 }
 
 /// <summary>Configuração global de IA — fallback para quem não tem token próprio.</summary>

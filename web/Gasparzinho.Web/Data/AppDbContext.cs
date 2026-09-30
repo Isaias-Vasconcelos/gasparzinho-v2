@@ -5,7 +5,8 @@ namespace Gasparzinho.Web.Data;
 
 /// <summary>
 /// Mapeia as entidades para o schema MySQL que já existe em produção (tabelas e
-/// colunas em snake_case), de modo que o banco atual continue válido.
+/// colunas em snake_case), de modo que o banco atual continue válido. O mesmo
+/// mapeamento serve ao SQLite, que guarda os dados com as mesmas tabelas.
 /// </summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
@@ -302,5 +303,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.HasIndex(x => x.TenantId).IsUnique();
         });
+
+        if (Database.IsSqlite()) UseCaseInsensitiveText(b);
+    }
+
+    /// <summary>
+    /// O MySQL compara texto sem diferenciar maiúsculas (collation padrão) e o
+    /// SQLite diferencia. Sem igualar, o mesmo login funcionaria num banco e
+    /// falharia no outro, e os índices únicos aceitariam "Admin" e "admin".
+    /// </summary>
+    private static void UseCaseInsensitiveText(ModelBuilder b)
+    {
+        foreach (var entity in b.Model.GetEntityTypes())
+        foreach (var property in entity.GetProperties())
+        {
+            if (property.ClrType == typeof(string)) property.SetCollation("NOCASE");
+        }
     }
 }

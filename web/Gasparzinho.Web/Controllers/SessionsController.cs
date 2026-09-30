@@ -67,10 +67,14 @@ public class SessionsController(
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>Manda a bridge iniciar o pareamento e leva à tela do QR.</summary>
+    /// <summary>
+    /// Manda a bridge iniciar o pareamento e leva à tela de conexão. Com
+    /// <paramref name="phone"/> o pareamento é por código digitado no celular;
+    /// sem ele, por QR.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Connect(string id, CancellationToken ct)
+    public async Task<IActionResult> Connect(string id, string? phone, CancellationToken ct)
     {
         var session = await FindAsync(id, ct);
         if (session is null)
@@ -85,6 +89,17 @@ public class SessionsController(
             return RedirectToAction(nameof(Index));
         }
 
+        string? pairingPhone = null;
+        if (phone is not null)
+        {
+            pairingPhone = NormalizePhone(phone);
+            if (pairingPhone is null)
+            {
+                TempData["Error"] = "Número inválido. Informe DDI + DDD + número, só com dígitos (ex: 5511999998888).";
+                return RedirectToAction(nameof(Qr), new { id = session.Id, mode = "code" });
+            }
+        }
+
         // Se já existe pareamento em andamento, não rebaixamos o status: o QR
         // guardado pode estar sendo lido agora em outra aba. A bridge trata a
         // chamada abaixo como idempotente e devolve a conexão que já existe.
@@ -97,11 +112,11 @@ public class SessionsController(
 
         try
         {
-            await bridge.ConnectAsync(session.Id, ct);
+            await bridge.ConnectAsync(session.Id, pairingPhone, ct);
         }
         catch (BridgeException ex)
         {
-            // A bridge é quem gera o QR — sem ela não há pareamento possível.
+            // A bridge é quem gera o QR e o código — sem ela não há pareamento.
             session.Status = "disconnected";
             session.QrCode = null;
             await db.SaveChangesAsync(ct);
@@ -111,16 +126,25 @@ public class SessionsController(
             return RedirectToAction(nameof(Index));
         }
 
-        return RedirectToAction(nameof(Qr), new { id = session.Id });
+        return RedirectToAction(nameof(Qr),
+            new { id = session.Id, mode = pairingPhone is null ? "qr" : "code" });
+    }
+
+    /// <summary>Só dígitos, com DDI: é o formato que o WhatsApp aceita.</summary>
+    private static string? NormalizePhone(string phone)
+    {
+        var digits = new string(phone.Where(char.IsAsciiDigit).ToArray());
+        return digits.Length is >= 10 and <= 15 ? digits : null;
     }
 
     /// <summary>
-    /// Tela do QR. O código não é renderizado aqui de propósito: ele vale
-    /// segundos, e o que estiver no banco quando a página carrega já pode ter
-    /// vencido. Quem preenche é a consulta de <see cref="Status"/>.
+    /// Tela de conexão (QR ou código). O código não é renderizado aqui de
+    /// propósito: ele vale pouco tempo, e o que estiver no banco quando a
+    /// página carrega já pode ter vencido. Quem preenche é a consulta de
+    /// <see cref="Status"/>.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Qr(string id, CancellationToken ct)
+    public async Task<IActionResult> Qr(string id, string? mode, CancellationToken ct)
     {
         var session = await FindAsync(id, ct);
         if (session is null) return NotFound();
@@ -130,6 +154,7 @@ public class SessionsController(
             SessionId = session.Id,
             SessionName = session.Name,
             Status = session.Status,
+            Mode = mode == "code" ? "code" : "qr",
         });
     }
 
@@ -160,6 +185,10 @@ public class SessionsController(
                 status = live.Status,
                 qrCode = live.QrCode,
                 qrExpiresInMs = live.QrExpiresInMs,
+                mode = live.Mode,
+                pairingCode = live.PairingCode,
+                pairingPhone = live.PairingPhone,
+                error = live.Error,
                 phone = live.Phone ?? session.Phone,
                 displayName = live.DisplayName ?? session.DisplayName,
                 bridgeOnline = true,
@@ -178,6 +207,10 @@ public class SessionsController(
                 status = session.Status,
                 qrCode = (string?)null,
                 qrExpiresInMs = 0,
+                mode = "qr",
+                pairingCode = (string?)null,
+                pairingPhone = (string?)null,
+                error = (string?)null,
                 phone = session.Phone,
                 displayName = session.DisplayName,
                 bridgeOnline = false,

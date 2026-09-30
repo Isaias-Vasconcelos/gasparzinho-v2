@@ -1,0 +1,50 @@
+@using Gasparzinho.Web.Data
+@model Gasparzinho.Web.Models.DatabaseChoiceViewModel
+@{
+    var connectionHint = ViewData["ConnectionHint"] as string;
+}
+
+<div class="field">
+    <label asp-for="Provider"></label>
+    <select asp-for="Provider" id="db-provider">
+        @foreach (var provider in Model.AvailableProviders)
+        {
+            <option value="@provider">@DatabaseProviders.Label(provider)</option>
+        }
+    </select>
+</div>
+
+<div class="field" id="db-sqlite-info">
+    <div class="hint">
+        Os dados ficam no arquivo <span class="mono">@Model.SqlitePath</span>, criado
+        automaticamente. Indicado para rodar no celular ou numa máquina só. Para
+        backup, copie esse arquivo com a aplicação parada.
+    </div>
+</div>
+
+<div class="field" id="db-mysql-fields">
+    <label asp-for="ConnectionString"></label>
+    <input asp-for="ConnectionString" autocomplete="off" spellcheck="false" class="mono"
+           placeholder="Server=localhost;Port=3306;Database=wpp;User ID=root;Password=...;" />
+    <div class="hint">
+        @(connectionHint ?? "O banco é criado se ainda não existir, desde que o usuário tenha permissão.")
+    </div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+        var select = document.getElementById('db-provider');
+        var mysql = document.getElementById('db-mysql-fields');
+        var sqlite = document.getElementById('db-sqlite-info');
+
+        function sync() {
+            var isMySql = select.value === '@DatabaseProviders.MySql';
+            mysql.hidden = !isMySql;
+            sqlite.hidden = isMySql;
+        }
+
+        select.addEventListener('change', sync);
+        sync();
+    })();
+</script>

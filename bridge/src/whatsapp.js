@@ -207,6 +207,10 @@ function createState(sessionId) {
     qrExpiresAt: 0,
     qrSeq: 0,            // ordem dos QRs dentro do socket atual
     qrCount: 0,          // quantos QRs este socket já emitiu
+    pairingPhone: null,  // número do modo "código de pareamento"; null = modo QR
+    pairingCode: null,
+    codeRequested: false, // o socket atual já pediu o código dele
+    lastError: null,
     phone: null,
     displayName: null,
     starting: null,
@@ -267,7 +271,10 @@ function publishStatus(state) {
   return state.publishing;
 }
 
-/** Muda o status e avisa o ASP.NET. O QR só sobrevive no estado 'qr_ready'. */
+/**
+ * Muda o status e avisa o ASP.NET. O QR só sobrevive no estado 'qr_ready' e o
+ * código de pareamento só no 'code_ready'.
+ */
 function setStatus(state, status, extra = {}) {
   Object.assign(state, extra);
   state.status = status;
@@ -276,6 +283,7 @@ function setStatus(state, status, extra = {}) {
     state.qr = null;
     state.qrExpiresAt = 0;
   }
+  if (status !== 'code_ready') state.pairingCode = null;
 
   return publishStatus(state);
 }
@@ -303,9 +311,15 @@ function closeSocket(state) {
  * pode criar um segundo socket. Dois sockets para o mesmo número disputam o
  * pareamento e cada um emite o seu QR, então o código exibido pode pertencer
  * ao socket errado e a leitura falha sem explicação.
+ *
+ * `request` só vem quando o usuário pede a conexão ({ phone } = código de
+ * pareamento, sem phone = QR); a religada automática não o passa e mantém o
+ * modo escolhido antes.
  */
-async function startSession(sessionId) {
+async function startSession(sessionId, request) {
   const state = getState(sessionId);
+
+  if (request) await applyPairingRequest(state, request);
 
   if (state.starting) {
     await state.starting;
@@ -335,6 +349,34 @@ async function startSession(sessionId) {
 }
 
 /**
+ * Aplica o modo pedido pelo usuário. Repetir o mesmo modo não mexe em nada (o
+ * código ou QR na tela continua valendo); trocar de modo no meio do pareamento
+ * derruba o socket atual, porque ele já está comprometido com o modo antigo.
+ */
+async function applyPairingRequest(state, { phone }) {
+  const wanted = phone || null;
+  state.lastError = null;
+
+  if (wanted === state.pairingPhone) return;
+  state.pairingPhone = wanted;
+
+  if (state.status === 'connected') return;
+  if (!state.sock && !state.starting && !state.reconnectTimer) return;
+
+  // Avançar a geração faz uma abertura em curso desistir sozinha.
+  state.generation += 1;
+  cancelReconnect(state);
+  closeSocket(state);
+  if (state.starting) await state.starting.catch(() => {});
+
+  // Sem publicar: o startSession que segue já avisa 'connecting'.
+  state.status = 'disconnected';
+  state.qr = null;
+  state.qrExpiresAt = 0;
+  state.pairingCode = null;
+}
+
+/**
  * Abertura frustrada (sem rede, disco cheio). Sem isto a sessão ficaria em
  * "conectando" para sempre, sem socket e sem ninguém para religá-la.
  */
@@ -355,9 +397,20 @@ async function openSocket(state) {
   const authPath = path.resolve(config.sessionsPath, sessionId);
   if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true });
 
-  const { default: makeWASocket, useMultiFileAuthState } = await loadBaileys();
+  const { default: makeWASocket, useMultiFileAuthState, Browsers } = await loadBaileys();
 
-  const { state: authState, saveCreds } = await useMultiFileAuthState(authPath);
+  let { state: authState, saveCreds } = await useMultiFileAuthState(authPath);
+
+  // Pedir código grava `me` nas credenciais antes de o pareamento terminar
+  // (`account` só chega no sucesso). Com `me` presente o Baileys tenta login
+  // em vez de registro, e o servidor recusa — então uma tentativa abandonada
+  // envenenaria todas as seguintes, por QR ou por código.
+  if (authState.creds.me && !authState.creds.account) {
+    fs.rmSync(authPath, { recursive: true, force: true });
+    fs.mkdirSync(authPath, { recursive: true });
+    ({ state: authState, saveCreds } = await useMultiFileAuthState(authPath));
+  }
+
   const version = await getProtocolVersion();
 
   // Entre os awaits acima a sessão pode ter sido desconectada pelo usuário.
@@ -367,7 +420,10 @@ async function openSocket(state) {
     version,
     auth: authState,
     logger: silentLogger,
-    browser: ['ModeraHUB', 'Chrome', '1.0.0'],
+    // O nome personalizado só serve ao QR. No código de pareamento o celular
+    // valida o par sistema/navegador enviado, e um sistema que ele não
+    // conhece faz o código ser recusado como "inválido".
+    browser: state.pairingPhone ? Browsers.macOS('Chrome') : ['ModeraHUB', 'Chrome', '1.0.0'],
     markOnlineOnConnect: false,
   });
 
@@ -375,6 +431,7 @@ async function openSocket(state) {
   state.paired = !!authState.creds?.registered;
   state.qrSeq = 0;
   state.qrCount = 0;
+  state.codeRequested = false;
   setStatus(state, 'connecting');
 
   sock.ev.on('creds.update', saveCreds);
@@ -444,6 +501,16 @@ async function handleConnectionUpdate(state, generation, authPath, update) {
   if (isNewLogin) state.paired = true;
 
   if (qr) {
+    // No modo código o QR é ignorado; o primeiro dele só sinaliza que o
+    // socket está pronto para pedir o código — antes disso o pedido falha.
+    if (state.pairingPhone) {
+      if (!state.codeRequested) {
+        state.codeRequested = true;
+        await requestPairingCode(state, generation);
+      }
+      return;
+    }
+
     // Numeramos cada código porque transformá-lo em imagem é assíncrono: sem
     // isso, um QR antigo pode terminar depois do novo e voltar para a tela.
     const seq = ++state.qrSeq;
@@ -463,6 +530,10 @@ async function handleConnectionUpdate(state, generation, authPath, update) {
     state.paired = true;
     state.reconnectAttempts = 0;
     state.pairingRounds = 0;
+    // Pareada: se as credenciais se perderem depois, o novo pareamento volta
+    // ao QR em vez de disparar notificações de código no celular sem ninguém
+    // estar olhando a tela.
+    state.pairingPhone = null;
     setStatus(state, 'connected', {
       phone: state.sock?.user?.id?.split(':')[0] || null,
       displayName: state.sock?.user?.name || null,
@@ -509,6 +580,29 @@ async function handleConnectionUpdate(state, generation, authPath, update) {
       console.error(`[session] falha ao reconectar: ${err.message}`)
     );
   }, delay);
+}
+
+/**
+ * Pede ao WhatsApp o código de 8 caracteres que o usuário digita no celular.
+ * Ele vale enquanto este socket viver; se o socket cair sem leitura, a próxima
+ * rodada pede outro e a tela troca sozinha.
+ */
+async function requestPairingCode(state, generation) {
+  const sock = state.sock;
+  try {
+    const code = await sock.requestPairingCode(state.pairingPhone);
+    if (state.generation !== generation) return;
+
+    console.log(`[session] ${state.sessionId}: código ${code} gerado para ${state.pairingPhone}`);
+    state.pairingCode = code;
+    setStatus(state, 'code_ready');
+  } catch (err) {
+    if (state.generation !== generation) return;
+
+    console.error(`[session] ${state.sessionId}: falha ao pedir código (${err.message})`);
+    state.lastError = 'O WhatsApp não gerou o código de pareamento. Confira o número e tente de novo.';
+    await disconnectSession(state.sessionId);
+  }
 }
 
 /** Traduz o código de desconexão em "o que fazer agora". */
@@ -586,6 +680,7 @@ async function disconnectSession(sessionId, { silent = false } = {}) {
   state.status = 'disconnected';
   state.qr = null;
   state.qrExpiresAt = 0;
+  state.pairingCode = null;
   state.phone = null;
   state.displayName = null;
 
@@ -601,6 +696,10 @@ function getSessionStatus(sessionId) {
       displayName: null,
       qrCode: null,
       qrExpiresInMs: 0,
+      mode: 'qr',
+      pairingCode: null,
+      pairingPhone: null,
+      error: null,
     };
   }
 
@@ -617,6 +716,10 @@ function getSessionStatus(sessionId) {
     displayName: state.displayName,
     qrCode: qrValid ? state.qr : null,
     qrExpiresInMs: qrValid ? remaining : 0,
+    mode: state.pairingPhone ? 'code' : 'qr',
+    pairingCode: state.status === 'code_ready' ? state.pairingCode : null,
+    pairingPhone: state.pairingPhone,
+    error: state.lastError,
   };
 }
 
