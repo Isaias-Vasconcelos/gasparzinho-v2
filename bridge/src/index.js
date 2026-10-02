@@ -2,6 +2,15 @@ const express = require('express');
 const config = require('./config');
 const wa = require('./whatsapp');
 
+// Um erro solto do Baileys não pode derrubar o processo — junto com ele cairiam
+// todas as sessões conectadas.
+process.on('unhandledRejection', (err) => {
+  console.error(`[bridge] promessa rejeitada sem tratamento: ${err?.stack || err}`);
+});
+process.on('uncaughtException', (err) => {
+  console.error(`[bridge] exceção não tratada: ${err?.stack || err}`);
+});
+
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
@@ -111,4 +120,5 @@ app.get('/sessions/:id/media/:messageId', handle(async (req, res) => {
 app.listen(config.port, () => {
   console.log(`[bridge] ouvindo em http://localhost:${config.port}`);
   console.log(`[bridge] eventos vão para ${config.appUrl}`);
+  wa.restoreSessions();
 });

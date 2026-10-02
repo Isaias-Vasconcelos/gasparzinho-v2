@@ -52,6 +52,11 @@ const MAX_PAIRING_ROUNDS = 3;
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30 * 1000;
 
+// Outro cliente "assumiu" o número (código 440). Na prática quase sempre é a
+// própria bridge reiniciada enquanto o socket antigo ainda não tinha morrido,
+// então insistimos com calma em vez de largar a sessão desconectada.
+const REPLACED_RETRY_MS = 15 * 1000;
+
 if (!fs.existsSync(config.sessionsPath)) {
   fs.mkdirSync(config.sessionsPath, { recursive: true });
 }
@@ -232,6 +237,7 @@ function createState(sessionId) {
     reconnectAttempts: 0,
     pairingRounds: 0,
     paired: false,
+    stopped: false,      // desligada pelo usuário: nada deve religá-la sozinho
     publishing: Promise.resolve(),
   };
 }
@@ -332,6 +338,7 @@ function closeSocket(state) {
  */
 async function startSession(sessionId, request) {
   const state = getState(sessionId);
+  state.stopped = false;
 
   if (request) await applyPairingRequest(state, request);
 
@@ -396,9 +403,34 @@ async function applyPairingRequest(state, { phone }) {
  */
 function failStart(state, err) {
   console.error(`[session] ${state.sessionId}: falha ao abrir (${err.message})`);
-  // Se já há socket, quem decide o próximo passo é o handler de 'close'.
-  if (state.sock || state.status === 'disconnected') return;
-  setStatus(state, 'disconnected');
+  // Se já há socket, quem decide o próximo passo é o handler de 'close'; se
+  // o usuário desligou a sessão no meio da abertura, não há o que religar.
+  if (state.sock || state.stopped) return;
+
+  // Sessão já pareada não pode morrer por uma falha passageira (rede fora,
+  // DNS): tentamos de novo com a mesma espera crescente das quedas.
+  if (state.paired) {
+    const delay = nextBackoff(state);
+    console.log(`[session] ${state.sessionId}: nova tentativa em ${delay}ms`);
+    setStatus(state, 'connecting');
+    scheduleReconnect(state, delay);
+    return;
+  }
+  if (state.status !== 'disconnected') setStatus(state, 'disconnected');
+}
+
+function nextBackoff(state) {
+  return Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** state.reconnectAttempts++);
+}
+
+function scheduleReconnect(state, delay) {
+  cancelReconnect(state);
+  state.reconnectTimer = setTimeout(() => {
+    state.reconnectTimer = null;
+    startSession(state.sessionId).catch((err) =>
+      console.error(`[session] falha ao reconectar: ${err.message}`)
+    );
+  }, delay);
 }
 
 async function openSocket(state) {
@@ -581,19 +613,18 @@ async function handleConnectionUpdate(state, generation, authPath, update) {
     return;
   }
 
-  const delay = statusCode === DisconnectReason.restartRequired
-    ? 250 // reinício pedido pelo servidor logo após o pareamento
-    : Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** state.reconnectAttempts++);
+  let delay;
+  if (statusCode === DisconnectReason.restartRequired) {
+    delay = 250; // reinício pedido pelo servidor logo após o pareamento
+  } else if (statusCode === DisconnectReason.connectionReplaced) {
+    delay = REPLACED_RETRY_MS;
+  } else {
+    delay = nextBackoff(state);
+  }
 
   console.log(`[session] ${state.sessionId} caiu (${statusCode ?? '?'}), religando em ${delay}ms`);
   setStatus(state, 'connecting');
-
-  state.reconnectTimer = setTimeout(() => {
-    state.reconnectTimer = null;
-    startSession(state.sessionId).catch((err) =>
-      console.error(`[session] falha ao reconectar: ${err.message}`)
-    );
-  }, delay);
+  scheduleReconnect(state, delay);
 }
 
 /**
@@ -627,10 +658,6 @@ function disconnectPlan(statusCode, DisconnectReason) {
     case DisconnectReason.forbidden:
     case DisconnectReason.multideviceMismatch:
       return { retry: false, wipeCreds: true };
-
-    // Outro cliente assumiu o número; reconectar aqui vira cabo de guerra.
-    case DisconnectReason.connectionReplaced:
-      return { retry: false, wipeCreds: false };
 
     // Credenciais corrompidas: só um pareamento novo resolve.
     case DisconnectReason.badSession:
@@ -685,6 +712,7 @@ async function disconnectSession(sessionId, { silent = false } = {}) {
   }
 
   state.generation += 1;
+  state.stopped = true;
   state.starting = null;
   state.reconnectAttempts = 0;
   state.pairingRounds = 0;
@@ -870,7 +898,41 @@ async function downloadMedia(sessionId, messageId) {
   }
 }
 
+/**
+ * Religa, na partida da bridge, toda sessão com credenciais válidas em disco.
+ * Sem isto qualquer reinício (crash, atualização, `--watch`, PC reiniciado)
+ * deixava as sessões desconectadas até alguém clicar em "Conectar" de novo.
+ */
+async function restoreSessions() {
+  let dirs = [];
+  try {
+    dirs = fs.readdirSync(config.sessionsPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+  } catch (err) {
+    console.error(`[session] não foi possível listar as sessões: ${err.message}`);
+    return;
+  }
+
+  for (const sessionId of dirs) {
+    let creds;
+    try {
+      creds = JSON.parse(fs.readFileSync(path.join(config.sessionsPath, sessionId, 'creds.json'), 'utf8'));
+    } catch {
+      continue; // nunca pareada, ou pareamento abandonado
+    }
+    if (!creds?.registered || !creds?.account) continue;
+
+    console.log(`[session] restaurando ${sessionId}`);
+    getState(sessionId).paired = true;
+    startSession(sessionId).catch((err) =>
+      console.error(`[session] ${sessionId}: falha ao restaurar (${err.message})`)
+    );
+  }
+}
+
 module.exports = {
+  restoreSessions,
   startSession,
   disconnectSession,
   getSessionStatus,
